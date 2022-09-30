@@ -1,6 +1,6 @@
 # posit 3.2.0.0
 
-The [Posit Standard 3.2] (https://posithub.org/docs/posit_standard.pdf),
+The [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf),
 where Real numbers are approximated by Maybe Rational.  The Posit type
 is mapped to a 2's complement integer type; smoothly and with tapering
 precision, in a similar way to the projective real line.  The 'posit'
@@ -82,8 +82,8 @@ class Convertible a b where
 ```
 
 The Posit Library is built on top of two of the most excellent libraries:
-[data-dword] (https://hackage.haskell.org/package/data-dword), and
-[scientific] (https://hackage.haskell.org/package/scientific).  The
+[data-dword](https://hackage.haskell.org/package/data-dword), and
+[scientific](https://hackage.haskell.org/package/scientific).  The
 'data-dword' library provides the underlining machine word
 representation, it can provide 2^es word size, 2's complement fixed
 length integers.  The 'scientific' library provides 'read' and 'show'
