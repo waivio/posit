@@ -1,5 +1,16 @@
 # Changelog for Posit Numbers
 
+# posit-3.2.0.1
+
+  * Refactored `IntN` Type Family to be a closed type family instead of an associated type family
+  * Refactored `IntN` constraints to use `ConstraintKinds` and made that to be a Super Class of `PositC` to improve the encapsulation the Constraints of the internal implementation
+  * Refactored `PositC` to make use of `ConstrainedClassMethods` vastly reducing code duplication
+  * Eliminated the `FlexableContexts` Language Extension from Posit.hs Interface, since the `InN` constraints no longer bleed into that file
+  * Added test of Heegner numbers (almost integers)
+  * Added test of various Gamma Function approximations
+  * Improved function names in the Orphan Instance for `Storable` ( `Word128` )
+  * Improved documentation
+
 ## posit-3.2.0.0
 
   * Posit Standard 3.2 [Posit Standard] (https://posithub.org/docs/posit_standard.pdf)

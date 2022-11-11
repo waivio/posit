@@ -19,6 +19,9 @@ import Posit.Internal.PositC
 main :: IO ()
 main = do
 --
+  print $ "exp(1)**(pi*sqrt 43): " ++ show (exp(1 :: Posit256) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 67): " ++ show (exp(1 :: Posit256) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 163): " ++ show (exp(1 :: Posit256) ** (pi * sqrt 163)) --
   print $ "Machine Alpha Posit8 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit8)) -- succ (Posit int) = Posit (succ int)
   print $ "Machine Alpha Posit16 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit16)) -- 
   print $ "Machine Alpha Posit32 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit32)) -- 
@@ -31,6 +34,16 @@ main = do
   let sqrtTuma = (funLogDomainReduction funLogTuma).(/2).(funExp2 funExpTuma).(/log 2)
   print $ "sqrt phi using a Tuma algorithm: " ++ show (sqrtTuma phi)
   print $ "Tuma is fasta: " ++ show (sqrtTaylor (1/1000000) - sqrtTuma (1/1000000))
+  let truth = 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: Posit256
+  eval "Standard: gamma(phi): " (gamma (phi)) truth
+  eval "Fused Gamma: gamma(phi): " (funGammaSeriesFused (phi)) truth
+  eval "Ramanujan Gamma: gamma(phi): " (funGammaRamanujan (phi)) truth
+  eval "Calc Gamma: gamma(phi): " (funGammaCalc (phi)) truth
+  eval "Nemes Gamma: gamma(phi): " (funGammaNemes (phi)) truth
+  eval "Yang Gamma: gamma(phi): " (funGammaYang (phi)) truth
+  eval "Chen Gamma: gamma(phi): " (funGammaChen (phi)) truth
+  eval "Gamma (x - 1): gamma(phi): " (funGammaXminus1 (phi)) truth
+  eval "Wolfram alpha: gamma(phi): " truth truth
   let truth = 5.0431656433600286513118821892854247103235901754138463603020001967777869609108929428415187821843384653305404495551887666992776792 :: Posit256
   eval "Standard: exp(phi):" (exp (phi)) truth
   eval "Taylor: exp(phi):" (funExp2 funExpTaylor (phi / log 2)) truth

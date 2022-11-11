@@ -21,7 +21,6 @@
 {-# LANGUAGE BangPatterns #-}  --   Added Strictness for some fixed point algorithms
 {-# LANGUAGE PatternSynonyms #-}  --   for a nice NaR interface
 {-# LANGUAGE FlexibleInstances #-} --   To make instances for each specific type [Posit8 .. Posit256]
-{-# LANGUAGE FlexibleContexts #-}  --   Allow non-type variables in the constraints
 {-# LANGUAGE TypeApplications #-} --   To apply types: @Type, it seems to select the specific class instance, when GHC is not able to reason about things, commenting this out shows an interesting interface
 {-# LANGUAGE MultiParamTypeClasses #-}  --   To convert between Posit Types
 {-# LANGUAGE ScopedTypeVariables #-} --   To reduce some code duplication
@@ -30,6 +29,7 @@
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}  --   Turn off noise
 {-# OPTIONS_GHC -Wno-type-defaults #-}  --   Turn off noise
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}  --   Turn off noise
+
 
 -- ----
 --  Posit numbers implementing:
@@ -54,7 +54,8 @@
 -- ----
 
 module Posit
-(-- * Main Exported Types
+(Posit(),
+ -- * Main Exported Types
  Posit8, -- |An 8-bit Posit number with 'es' ~ 'Z'
  Posit16, -- |An 16-bit Posit number with 'es' ~ 'I'
  Posit32, -- |An 32-bit Posit number with 'es' ~ 'II'
@@ -72,8 +73,10 @@ module Posit
  -- * Posits are Convertable between different Posit representations
  Convertible(..),
  
+#ifndef O_NO_SHOW
  -- * Additional functions to show the Posit in different formats
  AltShow(..),
+#endif
  
  -- * Additional Special Functions
  AltFloating(..),
@@ -86,6 +89,7 @@ module Posit
  viaRational4,
  viaRational6,
  viaRational8,
+ 
 #ifdef O_TEST
  -- * Alternative algorithms for test purposes
  funExp,
@@ -93,6 +97,13 @@ module Posit
  funExpTaylor,
  funLogTaylor,
  funExpTuma,
+ funGammaSeriesFused,
+ funGammaRamanujan,
+ funGammaCalc,
+ funGammaNemes,
+ funGammaYang,
+ funGammaChen,
+ funGammaXminus1,
  funLogTuma,
  funLogDomainReduction,
  funPi1,
@@ -103,14 +114,14 @@ module Posit
  funPsiSha2,
  funPsiSha3
 #endif
+
  ) where
 
 
 import Prelude hiding (rem)
 
 -- Imports for Show and Read Instances
-import Data.Scientific (Scientific
-                       ,scientificP
+import Data.Scientific (scientificP
                        ,fromRationalRepetendUnlimited
                        ,formatScientific
                        ,FPFormat(Generic)) -- Used to print/show and read the rational value
@@ -130,7 +141,7 @@ import Data.Foldable (toList)  -- Used for fused operations on foldable/lists
 
 -- Imports for Storable Instance
 import Foreign.Storable (Storable, sizeOf, alignment, peek, poke)  -- Used for Storable Instances of Posit
-import Foreign.Ptr (Ptr, plusPtr, castPtr)  -- Used for dealing with Pointers for the Posit Storable Instance
+import Foreign.Ptr (Ptr, castPtr)  -- Used for dealing with Pointers for the Posit Storable Instance
 
 
 -- would like to:
@@ -138,7 +149,7 @@ import Foreign.Ptr (Ptr, plusPtr, castPtr)  -- Used for dealing with Pointers fo
 -- Perhaps on the chopping block if we are moving to ElementaryFunctions
 -- Imports for implementing the Transcendental Functions
 import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
-import Data.Ratio (Rational, (%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
+import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
 
 import Debug.Trace (trace) -- temporary for debug purposes
 
@@ -148,7 +159,7 @@ import Debug.Trace (trace) -- temporary for debug purposes
 -- =====================================================================
 
 -- The machine implementation of the Posit encoding/decoding
-import Posit.Internal.PositC (ES(..), PositC(..))  -- The main internal implementation details
+import Posit.Internal.PositC  -- The main internal implementation details
 
 
 -- |Base GADT rapper type, that uses the Exponent Size kind to index the various implementations
@@ -156,7 +167,7 @@ data Posit (es :: ES) where
      Posit :: PositC es => !(IntN es) -> Posit es
 
 -- |Not a Real Number, the Posit is like a Maybe type, it's either a real number or not
-pattern NaR :: (PositC es) => Posit es
+pattern NaR :: PositC es => Posit es
 pattern NaR <- (Posit (decode -> Nothing)) where
   NaR = Posit unReal
 --
@@ -182,7 +193,7 @@ type Posit256 = Posit V
 #ifndef O_NO_SHOW
 -- Show
 --
-instance forall es. (PositC es) => Show (Posit es) where
+instance PositC es => Show (Posit es) where
   show NaR = "NaR"
   show (R r) = formatScientific Generic (Just $ decimalPrec @es) (fst.fromRationalRepetendUnlimited $ r)
 --
@@ -193,7 +204,7 @@ instance forall es. (PositC es) => Show (Posit es) where
 -- Two Posit Numbers are Equal if their Finite Precision Integer representation is Equal
 --
 -- All things equal I would rather write it like this:
-instance forall es. (Eq (IntN es)) => Eq (Posit es) where
+instance PositC es => Eq (Posit es) where
   (Posit int1) == (Posit int2) = int1 == int2
 --
 
@@ -202,7 +213,7 @@ instance forall es. (Eq (IntN es)) => Eq (Posit es) where
 -- Two Posit Numbers are ordered by their Finite Precision Integer representation
 --
 -- Ordinarily I would only like one instance to cover them all
-instance forall es. (Ord (IntN es), PositC es) => Ord (Posit es) where
+instance PositC es => Ord (Posit es) where
   compare (Posit int1) (Posit int2) = compare int1 int2
 --
 
@@ -211,7 +222,7 @@ instance forall es. (Ord (IntN es), PositC es) => Ord (Posit es) where
 -- Num
 --
 -- I'm num trying to get this definition:
-instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => Num (Posit es) where
+instance PositC es => Num (Posit es) where
   -- Addition
   (+) = viaRational2 (+)
   -- Multiplication
@@ -227,7 +238,7 @@ instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => Num (Posit es) 
 --
 
 -- deriving via Integral Class, for the Integral representation of the posit
-viaIntegral :: forall es. PositC es => (IntN es -> IntN es) -> Posit es -> Posit es
+viaIntegral :: PositC es => (IntN es -> IntN es) -> Posit es -> Posit es
 viaIntegral f (Posit int) = Posit $ f int
 --
 
@@ -235,7 +246,7 @@ viaIntegral f (Posit int) = Posit $ f int
 
 -- Enum-ish, A Posit has a Successor and Predecessor so its an ordinal number, as per Posit standard next, prior
 -- The Posit Standard requires 2's complement integer overflow to be ignored
-instance forall es. (Num (IntN es), Enum (IntN es), Ord (IntN es), PositC es) => Enum (Posit es) where
+instance PositC es => Enum (Posit es) where
   -- succ (Posit int) = Posit (int + 1)
   succ = viaIntegral (+1)
   -- succ = viaIntegral succ  -- Non-compliant, runtime error pred NaR, and worse it is Int64 for types of greater precision, probably because of Preludes gross abomination of toEnum/fromEnum
@@ -281,7 +292,7 @@ instance forall es. (Num (IntN es), Enum (IntN es), Ord (IntN es), PositC es) =>
 -- Fractional Instances; (Num => Fractional)
 --
 -- How the Frac do I get this definition:
-instance forall es. (Num (IntN es), Ord (IntN es), Eq (IntN es), PositC es) => Fractional (Posit es) where
+instance PositC es => Fractional (Posit es) where
   fromRational = R
  
   recip 0 = NaR
@@ -291,7 +302,7 @@ instance forall es. (Num (IntN es), Ord (IntN es), Eq (IntN es), PositC es) => F
 -- Rational Instances; Num & Ord Instanced => Real
 --
 -- I for real want this definition:
-instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => Real (Posit es) where
+instance PositC es => Real (Posit es) where
   toRational NaR = error "Your input is Not a Real or Rational (NaR) number, please try again!"
   toRational (R r) = r
 --
@@ -299,25 +310,25 @@ instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => Real (Posit es)
 -- Implementing instances via Rational Data Type's instance,
 -- The function checks for NaR, to protect against the runtime error 'toRational' would generate if called with a NaR value
 -- Unary::Arity NaR guarded pass through with wrapping and unwrapping use of a Rational function
-viaRational :: (PositC es, Ord (IntN es), Num (IntN es)) => (Rational -> Rational) -> Posit es -> Posit es
+viaRational :: PositC es => (Rational -> Rational) -> Posit es -> Posit es
 viaRational _ NaR = NaR
 viaRational f (R r) = fromRational $ f r
 
 -- Binary NaR guarded pass through with wrapping and unwrapping use of a Rational function
-viaRational2 :: (PositC es, Ord (IntN es), Num (IntN es)) => (Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es
+viaRational2 :: PositC es => (Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es
 viaRational2 _ NaR  _  = NaR
 viaRational2 _  _  NaR = NaR
 viaRational2 f (R r1) (R r2) = R $ r1 `f` r2
 
 -- Ternary NaR guarded pass through with wrapping and unwrapping use of a Rational function
-viaRational3 :: (PositC es, Ord (IntN es), Num (IntN es)) => (Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es
+viaRational3 :: PositC es => (Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es
 viaRational3 _ NaR  _   _  = NaR
 viaRational3 _  _  NaR  _  = NaR
 viaRational3 _  _   _  NaR = NaR
 viaRational3 f (R r1) (R r2) (R r3) = R $ f r1 r2 r3
 
 -- Quaternary NaR guarded pass through with wrapping and unwrapping use of a Rational function
-viaRational4 :: (PositC es, Ord (IntN es), Num (IntN es)) => (Rational -> Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
+viaRational4 :: PositC es => (Rational -> Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
 viaRational4 _ NaR  _   _   _  = NaR
 viaRational4 _  _  NaR  _   _  = NaR
 viaRational4 _  _   _  NaR  _  = NaR
@@ -325,7 +336,7 @@ viaRational4 _  _   _   _  NaR = NaR
 viaRational4 f (R r0) (R r1) (R r2) (R r3) = R $ f r0 r1 r2 r3
 
 -- Senary NaR guarded pass through with wrapping and unwrapping use of a Rational function
-viaRational6 :: (PositC es, Ord (IntN es), Num (IntN es)) => (Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
+viaRational6 :: PositC es => (Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
 viaRational6 _ NaR  _   _   _   _   _  = NaR
 viaRational6 _  _  NaR  _   _   _   _  = NaR
 viaRational6 _  _   _  NaR  _   _   _  = NaR
@@ -335,7 +346,7 @@ viaRational6 _  _   _   _   _   _  NaR = NaR
 viaRational6 f (R a1) (R a2) (R a3) (R b1) (R b2) (R b3) = R $ f a1 a2 a3 b1 b2 b3
 
 -- Octonary NaR guarded pass through with wrapping and unwrapping use of a Rational function
-viaRational8 :: (PositC es, Ord (IntN es), Num (IntN es)) => (Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
+viaRational8 :: PositC es => (Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational -> Rational) -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
 viaRational8 _ NaR  _   _   _   _   _   _   _  = NaR
 viaRational8 _  _  NaR  _   _   _   _   _   _  = NaR
 viaRational8 _  _   _  NaR  _   _   _   _   _  = NaR
@@ -351,7 +362,7 @@ viaRational8 f (R a0) (R a1) (R a2) (R a3) (R b0) (R b1) (R b2) (R b3) = R $ f a
 -- Bounded, bounded to what?!? To the ℝ! NaR is out of bounds!!!
 --
 -- I'm bound to want this definition:
-instance forall es. PositC es => Bounded (Posit es) where
+instance PositC es => Bounded (Posit es) where
   -- 'minBound' the most negative number represented
   minBound = Posit mostNegVal
   -- 'maxBound' the most positive number represented
@@ -411,7 +422,7 @@ instance FusedOps Rational where
 --
 
 --
-instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => FusedOps (Posit es) where
+instance PositC es => FusedOps (Posit es) where
   -- Fused Subtract Multiply
   fsm = viaRational3 fsm
   -- Fuse Multiply Add
@@ -460,7 +471,7 @@ instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => FusedOps (Posit
 class Convertible a b where
   convert :: a -> b
 
-instance forall es1 es2. (PositC es1, PositC es2, Ord (IntN es1), Ord (IntN es2), Num (IntN es1), Num (IntN es2)) => Convertible (Posit es1) (Posit es2) where
+instance (PositC es1, PositC es2) => Convertible (Posit es1) (Posit es2) where
   convert NaR = NaR
   convert (R r) = R r
 --
@@ -484,7 +495,7 @@ class AltShow a where
 --
 
 --
-instance forall es. (Show (IntN es), Ord (IntN es), Num (IntN es), PositC es) => AltShow (Posit es) where
+instance PositC es => AltShow (Posit es) where
   displayBinary (Posit int) = displayBin int
  
   displayIntegral (Posit int) = show int
@@ -494,7 +505,7 @@ instance forall es. (Show (IntN es), Ord (IntN es), Num (IntN es), PositC es) =>
   displayDecimal = viaShowable (fst.fromRationalRepetendUnlimited)
 --
 
-viaShowable :: forall es a. (Show a, Ord (IntN es), Num (IntN es), PositC es) => (Rational -> a) -> Posit es -> String
+viaShowable :: (Show a, PositC es) => (Rational -> a) -> Posit es -> String
 viaShowable _ NaR = "NaR"
 viaShowable f (R r) = show $ f r
 #endif
@@ -505,7 +516,7 @@ viaShowable f (R r) = show $ f r
 -- =====================================================================
 
 --
-instance forall es. (PositC es) => Read (Posit es) where
+instance PositC es => Read (Posit es) where
   readPrec =
     parens $ do
       x <- lexP
@@ -528,7 +539,7 @@ instance forall es. (PositC es) => Read (Posit es) where
 --
 #ifndef O_NO_STORABLE
 --
-instance forall es. (Storable (IntN es), PositC es) => Storable (Posit es) where
+instance PositC es => Storable (Posit es) where
   sizeOf _ = fromIntegral $ nBytes @es
   alignment _ = fromIntegral $ nBytes @es
   peek ptr = do
@@ -545,12 +556,12 @@ instance forall es. (Storable (IntN es), PositC es) => Storable (Posit es) where
 -- =====================================================================
 
 --
-instance forall es. (Num (IntN es), Ord (IntN es), PositC es) => RealFrac (Posit es) where
+instance PositC es => RealFrac (Posit es) where
   -- properFraction :: Integral b => a -> (b, a)
   properFraction = viaRationalErrTrunkation "NaR value is not a RealFrac" properFraction
 --
 
-viaRationalErrTrunkation :: forall es a. (Num (IntN es), (Ord (IntN es)), PositC es, Integral a) => String -> (Rational -> (a, Rational)) -> Posit es -> (a, Posit es)
+viaRationalErrTrunkation :: PositC es => String -> (Rational -> (a, Rational)) -> Posit es -> (a, Posit es)
 viaRationalErrTrunkation err _ NaR = error err
 viaRationalErrTrunkation _ f (R r) =
   let (int, r') = f r
@@ -560,7 +571,7 @@ viaRationalErrTrunkation _ f (R r) =
 -- ===                         Real Float                            ===
 -- =====================================================================
 --
-instance forall es. (Eq (IntN es), Ord (IntN es), Num (IntN es), Floating (Posit es), PositC es) => RealFloat (Posit es) where
+instance (Floating (Posit es), PositC es) => RealFloat (Posit es) where
   isIEEE _ = False
   isDenormalized _ = False
   isNegativeZero _ = False
@@ -773,6 +784,8 @@ funPhi  px@(Posit x)
     | otherwise = funPhi (Posit x')
       where
         (Posit x') = (px^2 + 2*px) / (px^2 + 1)
+        -- LiquidHaskell is telling me this is unsafe if px is imaginary
+        -- lucky for us Posit256 is not imaginary
 
 
 -- calculate atan(1/2^n)
@@ -1131,6 +1144,7 @@ funPi1 = go 0 3 1 (recip.sqrt $ 2) (recip 4) 1
         in go next ((a' + b')^2 / (4 * t')) a' b' t' p'
 --
 
+#ifndef O_NO_SHOW
 --  Borwein's algorithm, with quintic convergence,
 --  gets to 7 ULP in 4 iterations, but really slow due to expensive function evaluations
 --  quite unstable and will not converge if sqrt is not accurate, which means log must be accurate
@@ -1148,6 +1162,7 @@ funPi2 = recip $ go 0 0 0.5 (5 / phi^3)
             s' = 25 / ((z + x/z + 1)^2 * s)
         in go a (n+1) (trace (show a') a') s'
 --
+#endif
 
 
 -- Bailey–Borwein–Plouffe (BBP) formula, to 1-2 ULP, and blazing fast, converges in 60 iterations
@@ -1253,7 +1268,9 @@ funSinc theta = sin theta / theta
 
 -- Interestingly enough, wikipedia defines two alternative solutions
 -- for the Shannon Wavelet, eventhough there are infinite solutions
--- where the functions are equal, they are not equal
+-- where the functions are equal, they are not equal.  It a class of 
+-- functions with the charicteristic of being a band pass filter in the 
+-- frequency space.
 -- Shannon wavelet
 funPsiSha1 :: Posit256 -> Posit256
 funPsiSha1 NaR = NaR
@@ -1266,17 +1283,20 @@ funPsiSha2 NaR = NaR
 funPsiSha2 t = funSinc (t/2) * cos (3*pi*t/2)
 --
 
--- Shannon wavelet
+-- Shannon wavelet, same as funPsiSha1 but with a factor of pi, with the
+-- Law: funPsiSha1.(pi*) === funPsiSha3
+-- or : funPsiSha1 === funpsiSha3.(/pi)
+-- Posit256 seems to hold to a few ULP
 funPsiSha3 :: Posit256 -> Posit256
 funPsiSha3 NaR = NaR
 funPsiSha3 0 = 1  -- Why the hell not!
 funPsiSha3 t =
   let pit = pi * t
-      invpit = recip $ pit 
+      invpit = recip pit 
   in invpit * (sin (2 * pit) - sin pit)
 --
 
--- funPsiSha1.(pi*) === funPsiSha3
+
 
 -- Using the CORDIC domain reduction and some approximation function
 funLogDomainReduction :: (Posit256 -> Posit256) -> Posit256 -> Posit256
@@ -1346,6 +1366,17 @@ funGammaSeries z = sqrt(2 * pi) * (z**(z - 0.5)) * exp (negate z) * (1 + series)
     len = if lenA == lenB
             then lenA
             else error "Seiries Numerator and Denominator do not have the same length."
+
+funGammaSeriesFused :: Posit256 -> Posit256
+funGammaSeriesFused z = sqrt(2 * pi) * (z**(z - 0.5)) * exp (negate z) * (1 + series)
+  where
+    series :: Posit256
+    series = fsumL $ zipWith (*) [fromRational (a % b) | (a,b) <- zip a001163 a001164] [recip $ z^n |  n <- [1..len]]  -- zipWith (\x y -> ) a001163 a001164
+    lenA = length a001163
+    lenB = length a001164
+    len = if lenA == lenB
+            then lenA
+            else error "Seiries Numerator and Denominator do not have the same length."
 --
 
 funGammaCalc :: Posit256 -> Posit256
@@ -1365,4 +1396,7 @@ funGammaChen z = sqrt (2 * pi * x) * (x / exp 1)**x * (1 + recip (12*x^3 + (24/7
   where
     x = z - 1
 
-
+funGammaXminus1 :: Posit256 -> Posit256
+funGammaXminus1 x = go (x - 1)
+  where
+    go z = sqrt (2 * pi) * exp z ** (negate z) * z ** (z + 0.5)
