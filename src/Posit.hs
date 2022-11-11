@@ -21,6 +21,7 @@
 {-# LANGUAGE BangPatterns #-}  --   Added Strictness for some fixed point algorithms
 {-# LANGUAGE PatternSynonyms #-}  --   for a nice NaR interface
 {-# LANGUAGE FlexibleInstances #-} --   To make instances for each specific type [Posit8 .. Posit256]
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-} --   To apply types: @Type, it seems to select the specific class instance, when GHC is not able to reason about things, commenting this out shows an interesting interface
 {-# LANGUAGE MultiParamTypeClasses #-}  --   To convert between Posit Types
 {-# LANGUAGE ScopedTypeVariables #-} --   To reduce some code duplication

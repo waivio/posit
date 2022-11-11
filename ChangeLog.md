@@ -1,5 +1,9 @@
 # Changelog for Posit Numbers
 
+# posit-3.2.0.2
+
+  * Added `FlexableContexts` back in to Posit.hs, a build error occured on GHC-9.2 that didn't occur with GHC-9.0 or GHC-8.10
+
 # posit-3.2.0.1
 
   * Refactored `IntN` Type Family to be a closed type family instead of an associated type family
