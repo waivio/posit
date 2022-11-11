@@ -1,10 +1,11 @@
-# posit 3.2.0.0
+# posit 3.2.0.1
 
 The [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf),
-where Real numbers are approximated by Maybe Rational.  The Posit type
-is mapped to a 2's complement integer type; smoothly and with tapering
-precision, in a similar way to the projective real line.  The 'posit'
-library implements the following standard classes:
+where Real numbers are approximated by Maybe Rational.  The Posit 
+Numbers are a drop in replacement for `Float` or `Double` mapped to a 
+2's complement integer type; smoothly and with tapering precision, in a 
+similar way to the projective real line.  The 'posit' library implements
+the following standard classes:
 
  * Show
  * Eq
@@ -24,7 +25,7 @@ library implements the following standard classes:
  * Floating  -- Mathematical functions such as logarithm, exponential, trigonometric, and hyperbolic functions. Warning! May induce trance.
 
 The Posits are indexed by the type (es :: ES) where exponent size and
-word size are related.  In `posit-3.2.0.0` es is instantiated as Z, I,
+word size are related.  In `posit-3.2.0.1` es is instantiated as Z, I,
 II, III, IV, V.  The word size (in bits) of the value is `= 8 * 2^es`,
 that is `2^es` bytes.  The Types: 'Posit8', 'Posit16', 'Posit32',
 'Posit64', 'Posit128', and 'Posit256' are implemented and include a

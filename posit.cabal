@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           posit
-version:        3.2.0.0
+version:        3.2.0.1
 description:    The Posit Number format.  Please see the README on GitHub at <https://github.com/waivio/posit#readme>
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues
@@ -55,7 +55,7 @@ library
   ghc-options: -Wall -O2
  
   if flag(do-liquid)
-    ghc-options: -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--fast -fplugin-opt=LiquidHaskell:--max-case-expand=4 -fplugin-opt=LiquidHaskell:--no-termination -fplugin-opt=LiquidHaskell:--short-names
+    ghc-options: -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--fast -fplugin-opt=LiquidHaskell:--no-termination -fplugin-opt=LiquidHaskell:--max-case-expand=4 -fplugin-opt=LiquidHaskell:--short-names
  
   if flag(do-no-storable)
     cpp-options: -DO_NO_STORABLE
@@ -64,7 +64,7 @@ library
     cpp-options: -DO_NO_ORPHANS
  
   if flag(do-liquid)
-    cpp-options: -DO_LIQUID -DO_NO_STORABLE -DO_NO_READ -DO_NO_SHOW
+    cpp-options: -DO_LIQUID -DO_NO_STORABLE
  
   if flag(do-test)
     cpp-options: -DO_TEST
