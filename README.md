@@ -1,6 +1,6 @@
-# posit 3.2.0.2
+# posit 2022.0.0.0
 
-The [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf),
+The [Posit Standard 2022](https://posithub.org/docs/posit_standard-2.pdf),
 where Real numbers are approximated by Maybe Rational.  The Posit 
 Numbers are a drop in replacement for `Float` or `Double` mapped to a 
 2's complement integer type; smoothly and with tapering precision, in a 

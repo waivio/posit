@@ -1,5 +1,9 @@
 # Changelog for Posit Numbers
 
+# posit-2022
+
+  * Branch for the Posit Standard 2022 encoding
+
 # posit-3.2.0.2
 
   * Added `FlexableContexts` back in to Posit.hs, a build error occured on GHC-9.2 that didn't occur with GHC-9.0 or GHC-8.10
