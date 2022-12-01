@@ -8,7 +8,7 @@
 --   Portability :  Portable
 --
 -- | Library implementing standard Posit Numbers (Posit Standard version
---   3.2.0.0, with some improvements) a fixed width word size of
+--   3.2, with some improvements) a fixed width word size of
 --   2^es bytes.
 -- 
 ---------------------------------------------------------------------------------------------
@@ -111,6 +111,8 @@ module Posit
  funPi2,
  funPi3,
  funPi4,
+ funPi5,
+ funPi6,
  funPsiSha1,
  funPsiSha2,
  funPsiSha3
@@ -168,16 +170,16 @@ data Posit (es :: ES) where
      Posit :: PositC es => !(IntN es) -> Posit es
 
 -- |Not a Real Number, the Posit is like a Maybe type, it's either a real number or not
-pattern NaR :: PositC es => Posit es
-pattern NaR <- (Posit (decode -> Nothing)) where
-  NaR = Posit unReal
+pattern NaR :: forall es. PositC es => Posit es
+pattern NaR <- (Posit (decode @es -> Nothing)) where
+  NaR = Posit (unReal @es)
 --
 
 --
 -- |A Real or at least Rational Number, rounded to the nearest Posit Rational representation
-pattern R :: PositC es => Rational -> Posit es
-pattern R r <- (Posit (decode -> Just r)) where
-  R r = Posit (encode $ Just r)
+pattern R :: forall es. PositC es => Rational -> Posit es
+pattern R r <- (Posit (decode @es -> Just r)) where
+  R r = Posit (encode @es $ Just r)
 --
 
 -- Posit functions are complete if the following two patterns are completely defined.
@@ -233,7 +235,7 @@ instance PositC es => Num (Posit es) where
   -- 'signum' it is a kind of an representation of directionality, the sign of a number for instance
   signum = viaRational signum
   -- 'fromInteger' rounds the integer into the closest posit number
-  fromInteger int = Posit $ encode (Just $ fromInteger int)
+  fromInteger int = R $ fromInteger int
   -- 'negate', Negates the sign of the directionality. negate of a posit is the same as negate of the integer representation
   negate = viaIntegral negate
 --
@@ -365,9 +367,9 @@ viaRational8 f (R a0) (R a1) (R a2) (R a3) (R b0) (R b1) (R b2) (R b3) = R $ f a
 -- I'm bound to want this definition:
 instance PositC es => Bounded (Posit es) where
   -- 'minBound' the most negative number represented
-  minBound = Posit mostNegVal
+  minBound = Posit (mostNegVal @es)
   -- 'maxBound' the most positive number represented
-  maxBound = Posit mostPosVal
+  maxBound = Posit (mostPosVal @es)
 --
 
 
@@ -437,11 +439,11 @@ instance PositC es => FusedOps (Posit es) where
   -- Fuse Sum of 4 Posits
   fsum4 = viaRational4 fsum4
   -- Fuse Sum of a List
-  fsumL (toList -> l) = Posit $ encode (Just $ go l 0)
+  fsumL (toList -> l) = Posit $ encode @es (Just $ go l 0)
     where
       go :: [Posit es] -> Rational -> Rational
       go [] !acc = acc
-      go ((Posit int) : xs) !acc = case decode int of
+      go ((Posit int) : xs) !acc = case decode @es int of
                                      Nothing -> error "Posit List contains NaR"
                                      Just r -> go xs (acc + r)
   -- Fuse Dot Product of a 3-Vector
@@ -449,14 +451,14 @@ instance PositC es => FusedOps (Posit es) where
   -- Fuse Dot Product of a 4-Vector
   fdot4 = viaRational8 fdot4
   -- Fuse Dot Product of two Lists
-  fdotL (toList -> l1) (toList -> l2) = Posit $ encode (Just $ go l1 l2 0)
+  fdotL (toList -> l1) (toList -> l2) = Posit $ encode @es (Just $ go l1 l2 0)
     where
       go [] [] !acc = acc
       go []  _   _  = error "Lists not the same length"
       go _  []   _  = error "Lists not the same length"
-      go ((Posit int1) : bs) ((Posit int2) : cs) !acc = case decode int1 of
+      go ((Posit int1) : bs) ((Posit int2) : cs) !acc = case decode @es int1 of
                                                           Nothing -> error "First Posit List contains NaR"
-                                                          Just r1 -> case decode int2 of
+                                                          Just r1 -> case decode @es int2 of
                                                                        Nothing -> error "Second Posit List contains NaR"
                                                                        Just r2 -> go bs cs (acc + (r1 * r2))
 --
@@ -497,7 +499,7 @@ class AltShow a where
 
 --
 instance PositC es => AltShow (Posit es) where
-  displayBinary (Posit int) = displayBin int
+  displayBinary (Posit int) = displayBin @es int
  
   displayIntegral (Posit int) = show int
  
@@ -901,7 +903,7 @@ funAtanh x
   | x < 0 = negate.funAtanh.negate $ x  -- make use of odd parity to only calculate the positive part
   | otherwise = 0.5 * log ((1+t) / (1-t)) - (fromIntegral ex / 2) * lnOf2
     where
-      (ex, sig) = (int * fromIntegral (nBytes @V) + fromIntegral nat + 1, fromRational rat / 2)
+      (ex, sig) = (int * fromIntegral (2^(exponentSize @V)) + fromIntegral nat + 1, fromRational rat / 2)
       (_,int,nat,rat) = (posit2TupPosit @V).toRational $ x' -- sign should always be positive
       x' = 1 - x
       t = (2 - sig - x') / (2 + sig - x')
@@ -1093,7 +1095,7 @@ funLog x = funLog2 x * lnOf2
 --
 -- Use the constant, for performance
 lnOf2 :: Posit256
-lnOf2 = Posit 28670435363615573179632300308403400109260626501925370561166468529302554498548
+lnOf2 = 0.6931471805599453094172321214581765680755001343602552541206800094933936219696947156058633269964186875420014810205706857336855202
 --
 
 --
@@ -1122,7 +1124,7 @@ funLog2 z
         | acc == (acc + mak * 2^^(negate.fst.term $ sig')) = acc  -- stop when fixed point is reached
         | otherwise = go (acc + mak * 2^^(negate.fst.term $ sig')) (mak * 2^^(negate.fst.term $ sig')) (snd.term $ sig')
       term = findSquaring 0  -- returns (m,s') m the number of times to square, and the new significand
-      (ex, sig) = (int * fromIntegral (nBytes @V) + fromIntegral nat, fromRational rat)
+      (ex, sig) = (int * fromIntegral (2^(exponentSize @V)) + fromIntegral nat, fromRational rat)
       (_,int,nat,rat) = (posit2TupPosit @V).toRational $ z -- sign should always be positive
       findSquaring m s
         | s >= 2 && s < 4 = (m, s/2)
@@ -1150,18 +1152,19 @@ funPi1 = go 0 3 1 (recip.sqrt $ 2) (recip 4) 1
 --  gets to 7 ULP in 4 iterations, but really slow due to expensive function evaluations
 --  quite unstable and will not converge if sqrt is not accurate, which means log must be accurate
 funPi2 :: Posit256
-funPi2 = recip $ go 0 0 0.5 (5 / phi^3)
+funPi2 = recip $ go 0 0 0 0.5 (5 / phi^3)
   where
-    go :: Posit256 -> Natural -> Posit256 -> Posit256 -> Posit256
-    go !prev !n !a !s
-      | prev == a = a
+    go :: Posit256 -> Posit256 -> Natural -> Posit256 -> Posit256 -> Posit256
+    go !prevA !prevS !n !a !s
+      | prevA == a = a
+      | prevS == s = a
       | otherwise =
         let x = 5 / s - 1
             y = (x - 1)^2 + 7
             z = (0.5 * x * (y + sqrt (y^2 - 4 * x^3)))**(1/5)
             a' = s^2 * a - (5^n * ((s^2 - 5)/2 + sqrt (s * (s^2 - 2*s + 5))))
             s' = 25 / ((z + x/z + 1)^2 * s)
-        in go a (n+1) (trace (show a') a') s'
+        in go a s (n+1) (trace ("ΔA: " ++ show (a' - a)) a') (trace ("ΔS: " ++ show (s' - s)) s')
 --
 #endif
 
@@ -1191,6 +1194,43 @@ funPi4 = (1/2^6) * go 0 0
     term k = fromRational $ ((-1)^k % (2^(10*k))) * ((1 % (10 * k + 9)) - (2^2 % (10 * k + 7)) - (2^2 % (10 * k + 5)) - (2^6 % (10 * k + 3)) + (2^8 % (10 * k + 1)) - (1 % (4 * k + 3)) - (2^5 % (4 * k + 1)))
 --
 
+
+-- Borwin's Quadradic Alogrithm 1985
+funPi5 :: Posit256
+funPi5 = recip $ go 0 0 1 (6 - 4 * sqrt 2) (sqrt 2 - 1)
+  where
+    go :: Posit256 -> Posit256 -> Natural -> Posit256 -> Posit256 -> Posit256
+    go !prevA !prevY !n a y
+      | prevA == a = a
+      | prevY == y = a
+      | otherwise =
+        let f = (1 - y^4)**(1/4)
+            y' = (1 - f) / (1 + f)
+            a' = a * (1 + y')^4 - 2^(2 * n + 1) * y' * (1 + y' + y'^2) 
+        in if n == 3
+           then a'
+           else go a y (n+1) (trace ("A: " ++ show a') a') (trace ("Y: " ++ show y') y')
+--
+-- 3.14159265358979323846264338327950288419716939937510582097494459231
+-- ULP: -97
+
+-- Borwin's Cubic Algirthm
+funPi6 :: Posit256
+funPi6 = recip $ go 0 0 1 (1/3) ((sqrt 3 - 1) / 2)
+  where
+    go :: Posit256 -> Posit256 -> Natural -> Posit256 -> Posit256 -> Posit256
+    go !prevA !prevS !n !a !s
+      | prevA == a = a
+      | prevS == s = a
+      | otherwise =
+        let r = 3 / (1 + 2 * (1 - s^3)**(1/3))
+            s'= (r - 1) / 2
+            a'= r^2 * a - 3^(n-1) * (r^2 - 1)
+        in if n == 4
+           then a'
+           else go a s (n+1) a' s'
+-- 3.14159265358979323846264338327950288419716939937510582097494459231
+-- ULP: 216
 
 
 --
@@ -1307,7 +1347,7 @@ funLogDomainReduction f x
   | x <= 0 = NaR
   | otherwise = f sig + (fromIntegral ex * lnOf2)
     where
-      (ex, sig) = (int * fromIntegral (nBytes @V) + fromIntegral nat + 1, fromRational rat / 2) -- move significand range from 1,2 to 0.5,1
+      (ex, sig) = (int * fromIntegral (2^(exponentSize @V)) + fromIntegral nat + 1, fromRational rat / 2) -- move significand range from 1,2 to 0.5,1
       (_,int,nat,rat) = (posit2TupPosit @V).toRational $ x -- sign should always be positive
      
  

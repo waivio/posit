@@ -90,9 +90,11 @@ main = do
   let truth = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit256
   eval "Standard pi:" pi truth
   eval "Gauss–Legendre algorithm: pi:" funPi1 truth
-  eval "Borwein's algorithm: pi:" funPi2 truth
+  eval "Borwein's Quintic algorithm: pi:" funPi2 truth
   eval "Bailey–Borwein–Plouffe (BBP) formula: pi:" funPi3 truth
   eval "Fabrice Bellard improvement on the BBP: pi:" funPi4 truth
+  eval "Borwein's Quadradic 1985 formula: pi:" funPi5 truth
+  eval "Borwein Cubic: pi:" funPi6 truth
   eval "Wolfram Alpha: pi:" truth truth
   eval "Bailey–Borwein–Plouffe (BBP) formula: but succ pi:" (succ funPi3) truth
 --
