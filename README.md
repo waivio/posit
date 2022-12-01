@@ -1,4 +1,4 @@
-# posit 3.2.0.2
+# posit 3.2.0.3
 
 The [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf),
 where Real numbers are approximated by Maybe Rational.  The Posit 
@@ -25,7 +25,7 @@ the following standard classes:
  * Floating  -- Mathematical functions such as logarithm, exponential, trigonometric, and hyperbolic functions. Warning! May induce trance.
 
 The Posits are indexed by the type (es :: ES) where exponent size and
-word size are related.  In `posit-3.2.0.2` es is instantiated as Z, I,
+word size are related.  In `posit-3.2.0.3` es is instantiated as Z, I,
 II, III, IV, V.  The word size (in bits) of the value is `= 8 * 2^es`,
 that is `2^es` bytes.  The Types: 'Posit8', 'Posit16', 'Posit32',
 'Posit64', 'Posit128', and 'Posit256' are implemented and include a
