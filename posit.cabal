@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           posit
-version:        3.2.0.2
+version:        3.2.0.3
 description:    The Posit Number format.  Please see the README on GitHub at <https://github.com/waivio/posit#readme>
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues

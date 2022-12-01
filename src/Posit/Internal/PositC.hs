@@ -71,11 +71,9 @@ data ES = Z
         | V
 
 -- | Type of the Finite Precision Representation, in our case Int8, 
--- Int16, Int32, Int64, Int128, Int256. The 'es' of kind 'ES' will 
--- determine a result of 'r' such that you can determine the 'es' by the
--- 'r'
+-- Int16, Int32, Int64, Int128, Int256.
 {-@ embed IntN * as int @-}
-type family IntN (es :: ES) = r | r -> es
+type family IntN (es :: ES)
   where
     IntN Z   = Int8
     IntN I   = Int16
@@ -149,7 +147,7 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   signBitSize = 1
   
   uSeed :: Natural  -- ^ 'uSeed' scaling factor for the regime of the Posit Representation
-  uSeed = 2^(nBytes @es)
+  uSeed = 2^2^(exponentSize @es)
   
   -- | Integer Representation of common bounds
   unReal :: IntN es  -- ^ 'unReal' is something that is not Real, the integer value that is not a Real number
@@ -165,11 +163,11 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   leastNegVal = -1
   
   mostNegVal :: IntN es
-  mostNegVal = negate mostPosVal
+  mostNegVal = negate (mostPosVal @es)
   
   -- Rational Value of common bounds
   maxPosRat :: Rational
-  maxPosRat = 2^((nBytes @es) * ((nBits @es) - 2)) % 1
+  maxPosRat = (fromIntegral (uSeed @es)^(nBits @es - 2)) % 1
   minPosRat :: Rational
   minPosRat = recip (maxPosRat @es)
   maxNegRat :: Rational
