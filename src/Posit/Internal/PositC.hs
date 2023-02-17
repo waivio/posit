@@ -22,6 +22,8 @@
 {-# LANGUAGE FlexibleContexts #-} -- To reduce some code duplication by claiming the type family provides some constraints, that GHC can't do without fully evaluating the type family
 {-# LANGUAGE ConstrainedClassMethods #-} -- Allows constraints on class methods so default implementations of methods with Type Families can be implemented
 {-# LANGUAGE ConstraintKinds #-}  -- Simplify all of the constraints into a combinded constraint for the super class constraint
+{-# LANGUAGE DerivingVia #-}  -- To Derive instances for newtypes to eliminate Orphan Instances
+{-# LANGUAGE UndecidableInstances #-}  -- For deriving DoubleWord
 {-# LANGUAGE CPP #-} -- To remove Storable instances to remove noise when performing analysis of Core
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}  -- Turn off noise
 {-# OPTIONS_GHC -Wno-type-defaults #-}  -- Turn off noise
@@ -50,9 +52,9 @@ import Foreign.Ptr (Ptr, plusPtr, castPtr)  -- Used for dealing with Pointers fo
 {-@ embed Int128 * as int @-}
 {-@ embed Int256 * as int @-}
 import Data.Int (Int8,Int16,Int32,Int64)  -- Import standard Int sizes
-import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord) -- Import large Int sizes
+import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord,DoubleWord,BinaryWord) -- Import large Int sizes
 import Data.Word (Word64)
-import Data.Bits (Bits(..), (.|.), shiftL, shift, testBit, (.&.), shiftR)
+import Data.Bits (Bits(..), (.|.), shiftL, shift, testBit, (.&.), shiftR,FiniteBits)
 
 -- Import Naturals and Rationals
 {-@ embed Natural * as int @-}
@@ -79,8 +81,25 @@ type family IntN (es :: ES)
     IntN I   = Int16
     IntN II  = Int32
     IntN III = Int64
+#ifdef O_NO_STORABLE
     IntN IV  = Int128
     IntN V   = Int256
+#endif
+#ifndef O_NO_STORABLE
+    IntN IV  = Int128_Storable
+    IntN V   = Int256_Storable
+
+-- | New Type Wrappers to resolve Orphan Instance Issue
+newtype Int128_Storable = Int128_Storable Int128
+  deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
+    via Int128
+newtype Int256_Storable = Int256_Storable Int256
+  deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
+    via Int256
+newtype Word128_Storable = Word128_Storable Word128
+  deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
+    via Word128
+#endif
 
 -- | The 'FixedWidthInteger' is a Constraint Synonym that contains all
 -- of the constraints provided by the 'IntN' Type Family.  It is a super
@@ -370,14 +389,13 @@ xnor :: Bool -> Bool -> Bool
 xnor a b = not $ (a || b) && not (b && a)
 
 
-#ifndef O_NO_ORPHANS
 #ifndef O_NO_STORABLE
 -- =====================================================================
 -- ===                  Storable Instances                           ===
 -- =====================================================================
 --
--- Orphan Instance for Word128 using the DoubleWord type class
-instance Storable Word128 where
+-- Storable Instance for Word128 using the DoubleWord type class and Word128_Storable newtype
+instance Storable Word128_Storable where
   sizeOf _ = 16
   alignment _ = 16
   peek ptr = do
@@ -392,8 +410,8 @@ instance Storable Word128 where
       where
         offsetWord i = (castPtr ptr :: Ptr Word64) `plusPtr` (i*8)
 
--- Orphan Instance for Int128 using the DoubleWord type class
-instance Storable Int128 where
+-- Storable Instance for Int128 using the DoubleWord type class and Int128_Storable newtype
+instance Storable Int128_Storable where
   sizeOf _ = 16
   alignment _ = 16
   peek ptr = do
@@ -410,23 +428,23 @@ instance Storable Int128 where
         offsetInt i = (castPtr ptr :: Ptr Int64) `plusPtr` (i*8)
         offsetWord i = (castPtr ptr :: Ptr Word64) `plusPtr` (i*8)
 
--- Orphan Instance for Int256 using the DoubleWord type class
-instance Storable Int256 where
+-- Storable Instance for Int256 using the DoubleWord type class and Int256_Storable newtype
+instance Storable Int256_Storable where
   sizeOf _ = 32
   alignment _ = 32
   peek ptr = do
-    hi <- peek $ offsetInt 0
-    lo <- peek $ offsetWord 1
+    (Int128_Storable hi) <- peek $ offsetInt 0
+    (Word128_Storable lo) <- peek $ offsetWord 1
     return $ fromHiAndLo hi lo
       where
-        offsetInt i = (castPtr ptr :: Ptr Int128) `plusPtr` (i*16)
-        offsetWord i = (castPtr ptr :: Ptr Word128) `plusPtr` (i*16)
+        offsetInt i = (castPtr ptr :: Ptr Int128_Storable) `plusPtr` (i*16)
+        offsetWord i = (castPtr ptr :: Ptr Word128_Storable) `plusPtr` (i*16)
   poke ptr int = do
-    poke (offsetInt 0) (hiWord int)
-    poke (offsetWord 1) (loWord int)
+    poke (offsetInt 0) (Int128_Storable $ hiWord int)
+    poke (offsetWord 1) (Word128_Storable $ loWord int)
       where
-        offsetInt i = (castPtr ptr :: Ptr Int128) `plusPtr` (i*16)
-        offsetWord i = (castPtr ptr :: Ptr Word128) `plusPtr` (i*16)
+        offsetInt i = (castPtr ptr :: Ptr Int128_Storable) `plusPtr` (i*16)
+        offsetWord i = (castPtr ptr :: Ptr Word128_Storable) `plusPtr` (i*16)
 --
 #endif
-#endif
+

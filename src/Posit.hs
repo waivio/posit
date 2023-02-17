@@ -154,6 +154,9 @@ import Foreign.Ptr (Ptr, castPtr)  -- Used for dealing with Pointers for the Pos
 import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
 import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
 
+-- for NFData instance
+import Control.DeepSeq (NFData, rnf)
+
 import Debug.Trace (trace) -- temporary for debug purposes
 
 
@@ -168,6 +171,10 @@ import Posit.Internal.PositC  -- The main internal implementation details
 -- |Base GADT rapper type, that uses the Exponent Size kind to index the various implementations
 data Posit (es :: ES) where
      Posit :: PositC es => !(IntN es) -> Posit es
+
+-- |NFData Instance
+instance NFData (Posit es) where
+  rnf (Posit _) = ()
 
 -- |Not a Real Number, the Posit is like a Maybe type, it's either a real number or not
 pattern NaR :: forall es. PositC es => Posit es

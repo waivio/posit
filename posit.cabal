@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           posit
-version:        3.2.0.3
+version:        3.2.0.4
 description:    The Posit Number format.  Please see the README on GitHub at <https://github.com/waivio/posit#readme>
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues
@@ -11,6 +11,11 @@ copyright:      2021-2022 Nathan Waivio
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
+tested-with:         GHC == 8.10.4,
+                     GHC == 8.10.7,
+                     GHC == 9.0.2,
+                     GHC == 9.2.5,
+                     GHC == 9.4.4
 extra-source-files:
     README.md
     ChangeLog.md
@@ -21,11 +26,6 @@ source-repository head
 
 flag do-no-storable
   description: Build without Storable Class support
-  manual:      True
-  default:     False
-
-flag do-no-orphans
-  description: Build without Orphan Instances if data-dword gets updated for Storable Instances
   manual:      True
   default:     False
 
@@ -60,9 +60,6 @@ library
   if flag(do-no-storable)
     cpp-options: -DO_NO_STORABLE
  
-  if flag(do-no-orphans)
-    cpp-options: -DO_NO_ORPHANS
- 
   if flag(do-liquid)
     cpp-options: -DO_LIQUID -DO_NO_STORABLE
  
@@ -93,4 +90,17 @@ test-suite posit-test
   build-depends:
       base >=4.7 && <5
     , posit
+  default-language: Haskell2010
+
+-- Weigh based benchmark for Vector
+benchmark test-posit-weigh
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: WeighPosit.hs
+  ghc-options: -Wall -O2
+  build-depends:
+    posit,
+    base >=4.7 && <5,
+    vector,
+    weigh
   default-language: Haskell2010

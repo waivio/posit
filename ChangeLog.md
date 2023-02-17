@@ -1,5 +1,14 @@
 # Changelog for Posit Numbers
 
+# posit-3.2.0.4
+
+  * No more Orphan Instances for Storable!
+  * Figured out how to resolve the orphan instances problem with `newtype`, `DerivingVia` and `UndecidableInstances`.
+  * Added a "weigh" based test to verify the proper size of each Posit type
+  * Added a WeighPosit test; command to run: stack test posit:test-posit-weigh
+  * Added NFData instance.
+  * New GitHub Snapshot of Liquid Haskell makes it work with GHC 9.0.2!
+
 # posit-3.2.0.3
 
   * Made the following changes in anticipation of adding the 2022 Posit Standard:
