@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------------------
 --
---   Copyright   :  (C) 2022 Nathan Waivio
+--   Copyright   :  (C) 2022-2023 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
@@ -54,7 +54,7 @@ import Foreign.Ptr (Ptr, plusPtr, castPtr)  -- Used for dealing with Pointers fo
 import Data.Int (Int8,Int16,Int32,Int64)  -- Import standard Int sizes
 import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord,DoubleWord,BinaryWord) -- Import large Int sizes
 import Data.Word (Word64)
-import Data.Bits (Bits(..), (.|.), shiftL, shift, testBit, (.&.), shiftR,FiniteBits)
+import Data.Bits (Bits(..), shiftL, shift, testBit, (.&.), shiftR,FiniteBits)
 
 -- Import Naturals and Rationals
 {-@ embed Natural * as int @-}
@@ -227,7 +227,9 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
     let (regime', offset) = formRegime @es regime  -- offset is the number of binary digits remaining after the regime is formed
         (exponent', offset') = formExponent @es exponent offset  -- offset' is the number of binary digits remaining after the exponent is formed
         fraction = formFraction @es significand offset'
-    in regime' .|. exponent' .|. fraction
+    in regime' + exponent' + fraction  --  Previously bad code...
+    -- Was previously Bitwise OR'd (regime' .|. exponent' .|. fraction), but that failed when an overflow occurs in the fraction:
+    -- (R @es (6546781215792283740026379393655198304433284092086129578966582736192267592809066457889108741457440782093636999212155773298525238592782299216095867171579 % 6546781215792283740026379393655198304433284092086129578966582736192267592809349109766540184651808314301773368255120142018434513091770786106657055178752))
   
   formRegime :: Integer -> (IntN es, Integer)
   formRegime power

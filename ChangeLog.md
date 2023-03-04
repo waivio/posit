@@ -1,5 +1,9 @@
 # Changelog for Posit Numbers
 
+# posit-3.2.0.5
+
+  * Bug fix for `mkIntRep` to resolve an overflow issue with the fractional part when it rounds up, in anticipation of the 2022 Standard release
+
 # posit-3.2.0.4
 
   * No more Orphan Instances for Storable!
