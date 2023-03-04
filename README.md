@@ -1,4 +1,4 @@
-# posit 3.2.0.4
+# posit 3.2.0.5
 
 The [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf),
 where Real numbers are approximated by Maybe Rational.  The Posit 
