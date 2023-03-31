@@ -2,7 +2,7 @@ cabal-version: 1.12
 
 name:           posit
 version:        2022.0.0.0
-description:    The Posit Number format.  Please see the README on GitHub at <https://github.com/waivio/posit#readme>
+description:    The Posit Number format attempting to conform to the Posit Standard Versions 3.2 and 2022.  Where Real numbers are approximated by `Maybe Rational` and sampled in a similar way to the projective real line.
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues
 author:         Nathan Waivio
@@ -11,9 +11,16 @@ copyright:      2021-2022 Nathan Waivio
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
+tested-with:         GHC == 8.10.4,
+                     GHC == 8.10.7,
+                     GHC == 9.0.2,
+                     GHC == 9.2.7,
+                     GHC == 9.4.4
+synopsis:       Posit Numbers
 extra-source-files:
     README.md
     ChangeLog.md
+    stack.yaml
 
 source-repository head
   type: git
@@ -24,26 +31,16 @@ flag do-no-storable
   manual:      True
   default:     False
 
-flag do-no-orphans
-  description: Build without Orphan Instances if data-dword gets updated for Storable Instances
-  manual:      True
-  default:     False
-
 flag do-liquid
   description: Build with Liquid Haskell checking
   manual:      True
   default:     False
 
-flag do-test
-  description: Export additional algorithms for calculating primitive functions for test purposes
-  manual:      True
-  default:     False
 
 library
   exposed-modules:
       Posit
       Posit.Internal.PositC
-  other-modules:
   hs-source-dirs:
       src
   build-depends:
@@ -60,14 +57,9 @@ library
   if flag(do-no-storable)
     cpp-options: -DO_NO_STORABLE
  
-  if flag(do-no-orphans)
-    cpp-options: -DO_NO_ORPHANS
- 
   if flag(do-liquid)
     cpp-options: -DO_LIQUID -DO_NO_STORABLE
  
-  if flag(do-test)
-    cpp-options: -DO_TEST
  
   -- Other library packages from which modules are imported.
   build-depends:
@@ -80,17 +72,31 @@ library
   if flag(do-liquid)
     build-depends:
       liquid-base,
-      liquidhaskell >= 0.8.10
+      liquidhaskell
 
 -- perhaps one day: -threaded -rtsopts -with-rtsopts=-N
 test-suite posit-test
   type: exitcode-stdio-1.0
   main-is: TestPosit.hs
+  other-modules:
+      Test.Algorithms
   hs-source-dirs:
       test
   ghc-options: -O2
-  cpp-options: -DO_TEST
   build-depends:
-      base >=4.7 && <5
-    , posit
+    base >=4.7 && <5,
+    posit
+  default-language: Haskell2010
+
+-- Weigh based benchmark for Vector
+benchmark test-posit-weigh
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: WeighPosit.hs
+  ghc-options: -Wall -O2
+  build-depends:
+    base >=4.7 && <5,
+    posit,
+    vector,
+    weigh
   default-language: Haskell2010

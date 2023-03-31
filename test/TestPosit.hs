@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------------------
 -- | Posit Numbers
---   Copyright   :  (C) 2022 Nathan Waivio
+--   Copyright   :  (C) 2022-2023 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
@@ -11,39 +11,71 @@
 -- 
 ---------------------------------------------------------------------------------------------
 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
+
 import Posit
 import Posit.Internal.PositC
+import Test.Algorithms
 
+import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
 
 
 main :: IO ()
 main = do
 --
-  print $ "exp(1)**(pi*sqrt 43): " ++ show (exp(1 :: Posit256) ** (pi * sqrt 43)) -- 
-  print $ "exp(1)**(pi*sqrt 67): " ++ show (exp(1 :: Posit256) ** (pi * sqrt 67)) -- 
-  print $ "exp(1)**(pi*sqrt 163): " ++ show (exp(1 :: Posit256) ** (pi * sqrt 163)) --
-  print $ "Machine Alpha Posit8 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit8)) -- succ (Posit int) = Posit (succ int)
-  print $ "Machine Alpha Posit16 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit16)) -- 
-  print $ "Machine Alpha Posit32 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit32)) -- 
-  print $ "Machine Alpha Posit64 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit64)) -- 
-  print $ "Machine Alpha Posit128 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit128)) -- 
-  print $ "Machine Alpha Posit256 ~1.0: " ++ show (1.0 - succ (1.0 :: Posit256)) -- 
+  print $ "bitwise OR causes problem when fraction overflows Posit256: should be close to 1.0 not 0.5  ==>  " ++ show (R @V_3_2 (6546781215792283740026379393655198304433284092086129578966582736192267592809066457889108741457440782093636999212155773298525238592782299216095867171579 % 6546781215792283740026379393655198304433284092086129578966582736192267592809349109766540184651808314301773368255120142018434513091770786106657055178752))
+  print $ "bitwise OR causes problem when fraction overflows P256: should be close to 1.0 not 0.5  ==>  " ++ show (R @V_2022 (6546781215792283740026379393655198304433284092086129578966582736192267592809066457889108741457440782093636999212155773298525238592782299216095867171579 % 6546781215792283740026379393655198304433284092086129578966582736192267592809349109766540184651808314301773368255120142018434513091770786106657055178752))
+  print $ "exp(1)**(pi*sqrt 43) :: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 163):: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 163)) --
+  print $ "exp(1)**(pi*sqrt 163):: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 163)) --
+-- | 'EPS'
+  print $ "Machine epsilon Posit8 ~1.0: " ++ show (eps :: Posit8) -- succ (Posit int) = Posit (succ int)
+  print $ "Machine epsilon Posit16 ~1.0: " ++ show (eps :: Posit16) -- 
+  print $ "Machine epsilon Posit32 ~1.0: " ++ show (eps :: Posit32) -- 
+  print $ "Machine epsilon Posit64 ~1.0: " ++ show (eps :: Posit64) -- 
+  print $ "Machine epsilon Posit128 ~1.0: " ++ show (eps :: Posit128) -- 
+  print $ "Machine epsilon Posit256 ~1.0: " ++ show (eps :: Posit256) -- 
+  print $ "Machine epsilon P8 ~1.0: " ++ show (eps :: P8) -- succ (Posit int) = Posit (succ int)
+  print $ "Machine epsilon P16 ~1.0: " ++ show (eps :: P16) -- 
+  print $ "Machine epsilon P32 ~1.0: " ++ show (eps :: P32) -- 
+  print $ "Machine epsilon P64 ~1.0: " ++ show (eps :: P64) -- 
+  print $ "Machine epsilon P128 ~1.0: " ++ show (eps :: P128) -- 
+  print $ "Machine epsilon P256 ~1.0: " ++ show (eps :: P256) -- 
+  -- | Taylor vs. Tuma
   print $ "Does (1 - 1) == 0 ?: " ++ show ((1 - 1) == (0 :: Posit256)) -- [(1 - 1) == zero | zero = 0 :: Posit es, es <- Z .. V]
   let sqrtTaylor = (funLogDomainReduction funLogTaylor).(/2).(funExp2 funExpTaylor).(/log 2)
   print $ "sqrt phi using a Taylor algorithm: " ++ show (sqrtTaylor phi)
   let sqrtTuma = (funLogDomainReduction funLogTuma).(/2).(funExp2 funExpTuma).(/log 2)
   print $ "sqrt phi using a Tuma algorithm: " ++ show (sqrtTuma phi)
   print $ "Tuma is fasta: " ++ show (sqrtTaylor (1/1000000) - sqrtTuma (1/1000000))
-  let truth = 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: Posit256
-  eval "Standard: gamma(phi): " (gamma (phi)) truth
-  eval "Fused Gamma: gamma(phi): " (funGammaSeriesFused (phi)) truth
-  eval "Ramanujan Gamma: gamma(phi): " (funGammaRamanujan (phi)) truth
-  eval "Calc Gamma: gamma(phi): " (funGammaCalc (phi)) truth
-  eval "Nemes Gamma: gamma(phi): " (funGammaNemes (phi)) truth
-  eval "Yang Gamma: gamma(phi): " (funGammaYang (phi)) truth
-  eval "Chen Gamma: gamma(phi): " (funGammaChen (phi)) truth
-  eval "Gamma (x - 1): gamma(phi): " (funGammaXminus1 (phi)) truth
-  eval "Wolfram alpha: gamma(phi): " truth truth
+  {-
+  let truthPosit256 = 0.8956731517052878608869612167009786079379812529831641161347143256  :: Posit256  -- 0.89566032673209158354178209470474131001971567786620187475744721557  :: Posit256   -- 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: Posit256
+  let truthP256 = 0.8956731517052878608869612167009786079379812529831641161347143256 :: P256 --  0.89566032673209158354178209470474131001971567786620187475744721557 :: P256    -- 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: P256
+  eval "Standard: gamma(phi) :: Posit256 " (gamma (phi)) truthPosit256
+  eval "Standard: gamma(phi) :: P256 " (gamma (phi)) truthP256
+  eval "Fused Gamma: gamma(phi) :: Posit256 " (funGammaSeriesFused (phi)) truthPosit256
+  eval "Fused Gamma: gamma(phi) :: P256 " (funGammaSeriesFused (phi)) truthP256
+  eval "Ramanujan Gamma: gamma(phi) :: Posit256 " (funGammaRamanujan (phi)) truthPosit256
+  eval "Ramanujan Gamma: gamma(phi) :: P256 " (funGammaRamanujan (phi)) truthP256
+  eval "Calc Gamma: gamma(phi) :: Posit256 " (funGammaCalc (phi)) truthPosit256
+  eval "Calc Gamma: gamma(phi) :: P256 " (funGammaCalc (phi)) truthP256
+  eval "Nemes Gamma: gamma(phi) :: Posit256 " (funGammaNemes (phi)) truthPosit256
+  eval "Nemes Gamma: gamma(phi) :: P256 " (funGammaNemes (phi)) truthP256
+  eval "Yang Gamma: gamma(phi) :: Posit256 " (funGammaYang (phi)) truthPosit256
+  eval "Yang Gamma: gamma(phi) :: P256 " (funGammaYang (phi)) truthP256
+  eval "Chen Gamma: gamma(phi) :: Posit256 " (funGammaChen (phi)) truthPosit256
+  eval "Chen Gamma: gamma(phi) :: P256 " (funGammaChen (phi)) truthP256
+  eval "Gamma (x - 1): gamma(phi) :: Posit256 " (funGammaXminus1 (phi)) truthPosit256
+  eval "Gamma (x - 1): gamma(phi) :: P256 " (funGammaXminus1 (phi)) truthP256
+  eval "Calcuation of gamma(phi) using lngamma :: Posit256" (funGammaViaLngamma (phi)) truthPosit256
+  eval "Calcuation of gamma(phi) using lngamma :: P256" (funGammaViaLngamma (phi)) truthP256
+  eval "Wolfram alpha: gamma(phi) :: Posit256 " truthPosit256 truthPosit256
+  eval "Wolfram alpha: gamma(phi) :: P256 " truthP256 truthP256
+  -}
   let truth = 5.0431656433600286513118821892854247103235901754138463603020001967777869609108929428415187821843384653305404495551887666992776792 :: Posit256
   eval "Standard: exp(phi):" (exp (phi)) truth
   eval "Taylor: exp(phi):" (funExp2 funExpTaylor (phi / log 2)) truth
@@ -85,16 +117,26 @@ main = do
   eval "Tuma: log(1/1000):" (funLogDomainReduction funLogTuma (1/1000)) truth
   eval "Wolfram Alpha: log(1/1000):" truth truth
   let truth = 4.5347571611551792889915884948567915637887680293971326427244942079650289300980475282698882636812383679690567084677326507550787791 :: Posit256
-  eval "Standard: phi^pi:" ((phi) ** pi) truth
-  eval "Wolfram Alpha: phi^pi:" truth truth
-  let truth = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit256
-  eval "Standard pi:" pi truth
-  eval "Gauss–Legendre algorithm: pi:" funPi1 truth
-  eval "Borwein's algorithm: pi:" funPi2 truth
-  eval "Bailey–Borwein–Plouffe (BBP) formula: pi:" funPi3 truth
-  eval "Fabrice Bellard improvement on the BBP: pi:" funPi4 truth
-  eval "Wolfram Alpha: pi:" truth truth
-  eval "Bailey–Borwein–Plouffe (BBP) formula: but succ pi:" (succ funPi3) truth
+  eval "Standard: phi**pi:" ((phi) ** pi) truth
+  eval "Wolfram Alpha: phi**pi:" truth truth
+  let tPiPosit256 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit256
+  let tPiP256 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P256
+  eval "Standard pi :: Posit256" pi tPiPosit256
+  eval "Standard pi :: P256" pi tPiP256
+  eval "Gauss–Legendre algorithm: pi :: Posit256" funPi1 tPiPosit256
+  eval "Gauss–Legendre algorithm: pi :: P256" funPi1 tPiP256
+  eval "Borwein's Quintic algorithm: pi :: Posit256" funPi2 tPiPosit256
+  eval "Borwein's Quintic algorithm: pi :: P256" funPi2 tPiP256
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit256" funPi3 tPiPosit256
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P256" funPi3 tPiP256
+  eval "Fabrice Bellard improvement on the BBP: pi :: Posit256" funPi4 tPiPosit256
+  eval "Fabrice Bellard improvement on the BBP: pi :: P256" funPi4 tPiP256
+  eval "Borwein's Quadradic 1985 formula: pi :: Posit256" funPi5 tPiPosit256
+  eval "Borwein's Quadradic 1985 formula: pi :: P256" funPi5 tPiP256
+  eval "Borwein Cubic: pi :: Posit256" funPi6 tPiPosit256
+  eval "Borwein Cubic: pi :: P256" funPi6 tPiP256
+  eval "Wolfram Alpha: pi :: Posit256" tPiPosit256 tPiPosit256
+  eval "Wolfram Alpha: pi :: P256" tPiP256 tPiP256
 --
   -- print $ "Does (1 - 1) == 0 ?: " ++ (1 - 1) == (0 :: Posit256) -- [(1 - 1) == zero | zero = 0 :: Posit es, es <- Z .. V]
   print "Now for Property testing of Posit8... (This should generalize for all other Posit types)"
@@ -124,7 +166,7 @@ main = do
 
 
 
-eval :: String -> Posit256 -> Posit256 -> IO ()
+eval :: (PositC es) => String -> Posit es -> Posit es -> IO ()
 eval msg val tru = putStr $ msg ++ "\n" ++ (show val) ++ "\n" ++ "ULP: " ++ (show $ valInt - truInt) ++ "\n"
   where
     valInt = read (displayIntegral val) :: Integer
@@ -193,4 +235,5 @@ absSignumLaw = and [abs x * signum x == x | x <- enumFrom (NaR :: Posit8)]
 
 recipInv8 :: Bool
 recipInv8 = and [((x * recip x) == fromInteger 1) && ((recip x * x) == fromInteger 1)  | x <- enumFrom (NaR :: Posit8)]
+
 

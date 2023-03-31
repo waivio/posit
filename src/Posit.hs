@@ -1,30 +1,32 @@
 
 --------------------------------------------------------------------------------------------
 --   Posit Numbers
---   Copyright   :  (C) 2022 Nathan Waivio
+--   Copyright   :  (C) 2022-2023 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
 --   Portability :  Portable
 --
--- | Library implementing standard Posit Numbers (Posit Standard version
---   3.2.0.0, with some improvements) a fixed width word size of
---   2^es bytes.
+-- | Library implementing standard Posit Numbers both Posit Standard version
+--   3.2 and 2022, with some improvements.  Posit is the interface, PositC 
+--   provides the implemetation.  2's Complement Fixed Point Integers,
+--   and Rational numbers, are used throughout, as well as Integers & Naturals.
+--   Encode and Decode are indexed through a Type Family.
 -- 
 ---------------------------------------------------------------------------------------------
 
 
 {-# LANGUAGE GADTs #-} --   For our main type Posit (es :: ES)
-{-# LANGUAGE DataKinds #-}  --   For our ES kind and the constructors Z, I, II, III, IV, V for exponent size type
+{-# LANGUAGE DataKinds #-}  --   For our ES kind and the constructors Z, I, II, III, IV, V for exponent size type, post-pended with the version.
 {-# LANGUAGE KindSignatures #-}  --   For defining the type of kind ES that indexes the GADT
 {-# LANGUAGE ViewPatterns #-}  --   To decode the posit in the pattern
 {-# LANGUAGE BangPatterns #-}  --   Added Strictness for some fixed point algorithms
 {-# LANGUAGE PatternSynonyms #-}  --   for a nice NaR interface
-{-# LANGUAGE FlexibleInstances #-} --   To make instances for each specific type [Posit8 .. Posit256]
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-} --   To make instances for each specific type [Posit8 .. Posit256], and [P8 .. P256]
+{-# LANGUAGE FlexibleContexts #-} --   If anybody knows what's this for let me know...
 {-# LANGUAGE TypeApplications #-} --   To apply types: @Type, it seems to select the specific class instance, when GHC is not able to reason about things, commenting this out shows an interesting interface
-{-# LANGUAGE MultiParamTypeClasses #-}  --   To convert between Posit Types
-{-# LANGUAGE ScopedTypeVariables #-} --   To reduce some code duplication
+{-# LANGUAGE MultiParamTypeClasses #-}  --   To convert between Posit Types, via Rational
+{-# LANGUAGE ScopedTypeVariables #-} --   To reduce some code duplication, this is important
 {-# LANGUAGE UndecidableInstances #-}  --   To reduce some code duplication, I think the code is decidable but GHC is not smart enough ;), like there being only 1 instance that is polymorphic and works for all of my types.
 {-# LANGUAGE CPP #-} --   To remove Storable instances to remove noise when performing analysis of Core
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}  --   Turn off noise
@@ -36,9 +38,9 @@
 --  Posit numbers implementing:
 --
 --    * Show
---    * Eq
---    * Ord  -- compare as an integer representation
---    * Num  -- Addition, subtraction, multiplication, and other operations
+--    * Eq  -- equality via an integer representation
+--    * Ord  -- compare via an integer representation
+--    * Num  -- Addition, subtraction, multiplication, and other operations most via Rational, negate is via an integer representation
 --    * Enum  -- Successor and Predecessor
 --    * Fractional  -- division, divide by zero is Not a Real (NaR) number
 --    * Real
@@ -57,14 +59,20 @@
 module Posit
 (Posit(),
  -- * Main Exported Types
- Posit8, -- |An 8-bit Posit number with 'es' ~ 'Z'
- Posit16, -- |An 16-bit Posit number with 'es' ~ 'I'
- Posit32, -- |An 32-bit Posit number with 'es' ~ 'II'
- Posit64, -- |An 64-bit Posit number with 'es' ~ 'III'
- Posit128, -- |An 128-bit Posit number with 'es' ~ 'IV'
- Posit256, -- |An 256-bit Posit number with 'es' ~ 'V'
+ Posit8, -- |A Posit-3.2 8-bit Posit number with 'exponentSize' = '0', and 1 byte wide
+ Posit16, -- |A Posit-3.2 16-bit Posit number with 'exponentSize' = '1', and 2 bytes wide
+ Posit32, -- |A Posit-3.2 32-bit Posit number with 'exponentSize' = '2', and 4 bytes wide
+ Posit64, -- |A Posit-3.2 64-bit Posit number with 'exponentSize' = '3', and 8 bytes wide
+ Posit128, -- |A Posit-3.2 128-bit Posit number with 'exponentSize' = '4', and 16 bytes wide
+ Posit256, -- |A Posit-3.2 256-bit Posit number with 'exponentSize' = '5', and 32 bytes wide
+ P8, -- |A Posit-2022 8-bit Posit number with 'exponentSize' = '2', and 1 byte wide
+ P16, -- |A Posit-2022 16-bit Posit number with 'exponentSize' = '2', and 2 bytes wide
+ P32, -- |A Posit-2022 32-bit Posit number with 'exponentSize' = '2', and 4 bytes wide
+ P64, -- |A Posit-2022 64-bit Posit number with 'exponentSize' = '2', and 8 bytes wide
+ P128, -- |A Posit-2022 128-bit Posit number with 'exponentSize' = '2', and 16 bytes wide
+ P256, -- |A Posit-2022 256-bit Posit number with 'exponentSize' = '2', and 32 bytes wide
  
- -- * Patterns for Matching Exported Types
+ -- * A Complete Pair of Patterns for Matching Exported Types
  pattern NaR,  -- |A pattern for Exception handling when a value is Not a Real number (NaR).
  pattern R,  -- |A pattern for the non-Exceptional case, yielding a Rational, will make a total function when paired with NaR, if the Rational implementation is total.
  
@@ -89,33 +97,8 @@ module Posit
  viaRational3,
  viaRational4,
  viaRational6,
- viaRational8,
+ viaRational8
  
-#ifdef O_TEST
- -- * Alternative algorithms for test purposes
- funExp,
- funExp2,
- funExpTaylor,
- funLogTaylor,
- funExpTuma,
- funGammaSeriesFused,
- funGammaRamanujan,
- funGammaCalc,
- funGammaNemes,
- funGammaYang,
- funGammaChen,
- funGammaXminus1,
- funLogTuma,
- funLogDomainReduction,
- funPi1,
- funPi2,
- funPi3,
- funPi4,
- funPsiSha1,
- funPsiSha2,
- funPsiSha3
-#endif
-
  ) where
 
 
@@ -152,7 +135,10 @@ import Foreign.Ptr (Ptr, castPtr)  -- Used for dealing with Pointers for the Pos
 import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
 import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
 
-import Debug.Trace (trace) -- temporary for debug purposes
+-- for NFData instance
+import Control.DeepSeq (NFData, rnf)
+
+-- import Debug.Trace (trace) -- temporary for debug purposes
 
 
 -- =====================================================================
@@ -167,29 +153,41 @@ import Posit.Internal.PositC  -- The main internal implementation details
 data Posit (es :: ES) where
      Posit :: PositC es => !(IntN es) -> Posit es
 
+-- |NFData Instance
+instance NFData (Posit es) where
+  rnf (Posit _) = ()
+
 -- |Not a Real Number, the Posit is like a Maybe type, it's either a real number or not
-pattern NaR :: PositC es => Posit es
-pattern NaR <- (Posit (decode -> Nothing)) where
-  NaR = Posit unReal
+pattern NaR :: forall es. PositC es => Posit es
+pattern NaR <- (Posit (decode @es -> Nothing)) where
+  NaR = Posit (unReal @es)
 --
 
 --
 -- |A Real or at least Rational Number, rounded to the nearest Posit Rational representation
-pattern R :: PositC es => Rational -> Posit es
-pattern R r <- (Posit (decode -> Just r)) where
-  R r = Posit (encode $ Just r)
+pattern R :: forall es. PositC es => Rational -> Posit es
+pattern R r <- (Posit (decode @es -> Just r)) where
+  R r = Posit (encode @es $ Just r)
 --
 
 -- Posit functions are complete if the following two patterns are completely defined.
 {-# COMPLETE NaR, R #-}
 
--- Concrete types exported for use.
-type Posit8 = Posit Z
-type Posit16 = Posit I
-type Posit32 = Posit II
-type Posit64 = Posit III
-type Posit128 = Posit IV
-type Posit256 = Posit V
+-- Concrete 3.2 types exported for use.
+type Posit8 = Posit Z_3_2
+type Posit16 = Posit I_3_2
+type Posit32 = Posit II_3_2
+type Posit64 = Posit III_3_2
+type Posit128 = Posit IV_3_2
+type Posit256 = Posit V_3_2
+
+-- Concrete 2022 types exported for use.
+type P8 = Posit Z_2022
+type P16 = Posit I_2022
+type P32 = Posit II_2022
+type P64 = Posit III_2022
+type P128 = Posit IV_2022
+type P256 = Posit V_2022
 
 #ifndef O_NO_SHOW
 -- Show
@@ -233,7 +231,7 @@ instance PositC es => Num (Posit es) where
   -- 'signum' it is a kind of an representation of directionality, the sign of a number for instance
   signum = viaRational signum
   -- 'fromInteger' rounds the integer into the closest posit number
-  fromInteger int = Posit $ encode (Just $ fromInteger int)
+  fromInteger int = R $ fromInteger int
   -- 'negate', Negates the sign of the directionality. negate of a posit is the same as negate of the integer representation
   negate = viaIntegral negate
 --
@@ -248,11 +246,11 @@ viaIntegral f (Posit int) = Posit $ f int
 -- Enum-ish, A Posit has a Successor and Predecessor so its an ordinal number, as per Posit standard next, prior
 -- The Posit Standard requires 2's complement integer overflow to be ignored
 instance PositC es => Enum (Posit es) where
-  -- succ (Posit int) = Posit (int + 1)
-  succ = viaIntegral (+1)
+  -- succ (Posit int) = Posit (int + 1)  -- Successor
+  succ = viaIntegral (+1)  -- Posit Standard `next`
   -- succ = viaIntegral succ  -- Non-compliant, runtime error pred NaR, and worse it is Int64 for types of greater precision, probably because of Preludes gross abomination of toEnum/fromEnum
-  -- pred (Posit int) = Posit (int - 1)
-  pred = viaIntegral (subtract 1)
+  -- pred (Posit int) = Posit (int - 1)  -- Predicessor
+  pred = viaIntegral (subtract 1)  -- Posit Standard `prior`
   -- pred = viaIntegral pred  -- Non-compliant, runtime error pred NaR, and worse it is Int64 for types of greater precision, probably because of Preludes gross abomination of toEnum/fromEnum
   -- enumFrom :: Posit es -> [Posit es]
   enumFrom n = enumFromTo n maxBound
@@ -365,9 +363,9 @@ viaRational8 f (R a0) (R a1) (R a2) (R a3) (R b0) (R b1) (R b2) (R b3) = R $ f a
 -- I'm bound to want this definition:
 instance PositC es => Bounded (Posit es) where
   -- 'minBound' the most negative number represented
-  minBound = Posit mostNegVal
+  minBound = Posit (mostNegVal @es)
   -- 'maxBound' the most positive number represented
-  maxBound = Posit mostPosVal
+  maxBound = Posit (mostPosVal @es)
 --
 
 
@@ -437,11 +435,11 @@ instance PositC es => FusedOps (Posit es) where
   -- Fuse Sum of 4 Posits
   fsum4 = viaRational4 fsum4
   -- Fuse Sum of a List
-  fsumL (toList -> l) = Posit $ encode (Just $ go l 0)
+  fsumL (toList -> l) = Posit $ encode @es (Just $ go l 0)
     where
       go :: [Posit es] -> Rational -> Rational
       go [] !acc = acc
-      go ((Posit int) : xs) !acc = case decode int of
+      go ((Posit int) : xs) !acc = case decode @es int of
                                      Nothing -> error "Posit List contains NaR"
                                      Just r -> go xs (acc + r)
   -- Fuse Dot Product of a 3-Vector
@@ -449,14 +447,14 @@ instance PositC es => FusedOps (Posit es) where
   -- Fuse Dot Product of a 4-Vector
   fdot4 = viaRational8 fdot4
   -- Fuse Dot Product of two Lists
-  fdotL (toList -> l1) (toList -> l2) = Posit $ encode (Just $ go l1 l2 0)
+  fdotL (toList -> l1) (toList -> l2) = Posit $ encode @es (Just $ go l1 l2 0)
     where
       go [] [] !acc = acc
       go []  _   _  = error "Lists not the same length"
       go _  []   _  = error "Lists not the same length"
-      go ((Posit int1) : bs) ((Posit int2) : cs) !acc = case decode int1 of
+      go ((Posit int1) : bs) ((Posit int2) : cs) !acc = case decode @es int1 of
                                                           Nothing -> error "First Posit List contains NaR"
-                                                          Just r1 -> case decode int2 of
+                                                          Just r1 -> case decode @es int2 of
                                                                        Nothing -> error "Second Posit List contains NaR"
                                                                        Just r2 -> go bs cs (acc + (r1 * r2))
 --
@@ -497,7 +495,7 @@ class AltShow a where
 
 --
 instance PositC es => AltShow (Posit es) where
-  displayBinary (Posit int) = displayBin int
+  displayBinary (Posit int) = displayBin @es int
  
   displayIntegral (Posit int) = show int
  
@@ -622,698 +620,225 @@ instance (Floating (Posit es), PositC es) => RealFloat (Posit es) where
 -- ===                         Floating                              ===
 -- =====================================================================
 
+instance (PositC es, PositC (Next es)) => Floating (Posit es) where
+  pi = approx_pi
+  exp = hiRezNext approx_exp
+  log = hiRezNext approx_log
+  x ** y = hiRezNext2 approx_pow x y
+  sin = hiRezNext approx_sin
+  cos = hiRezNext approx_cos
+  asin = hiRezNext approx_asin
+  acos = hiRezNext approx_acos
+  atan = hiRezNext approx_atan
+  sinh = hiRezNext approx_sinh
+  cosh = hiRezNext approx_cosh
+  asinh = hiRezNext approx_asinh
+  acosh = hiRezNext approx_acosh
+  atanh = hiRezNext approx_atanh
 
-instance Floating Posit8 where
-  pi = convert (pi :: Posit256) :: Posit8
-  exp x = convert (exp (convert x) :: Posit256) :: Posit8
-  log x = convert (log (convert x) :: Posit256) :: Posit8
-  x ** y = convert $ (convert x :: Posit256) ** (convert y :: Posit256) :: Posit8
-  sin x = convert (sin (convert x) :: Posit256) :: Posit8
-  cos x = convert (cos (convert x) :: Posit256) :: Posit8
-  asin x = convert (asin (convert x) :: Posit256) :: Posit8
-  acos x = convert (acos (convert x) :: Posit256) :: Posit8
-  atan x = convert (atan (convert x) :: Posit256) :: Posit8
-  sinh x = convert (sinh (convert x) :: Posit256) :: Posit8
-  cosh x = convert (cosh (convert x) :: Posit256) :: Posit8
-  asinh x = convert (asinh (convert x) :: Posit256) :: Posit8
-  acosh x = convert (acosh (convert x) :: Posit256) :: Posit8
-  atanh x = convert (atanh (convert x) :: Posit256) :: Posit8
 
-instance Floating Posit16 where
-  pi = convert (pi :: Posit256) :: Posit16
-  exp x = convert (exp (convert x) :: Posit256) :: Posit16
-  log x = convert (log (convert x) :: Posit256) :: Posit16
-  x ** y = convert $ (convert x :: Posit256) ** (convert y :: Posit256) :: Posit16
-  sin x = convert (sin (convert x) :: Posit256) :: Posit16
-  cos x = convert (cos (convert x) :: Posit256) :: Posit16
-  asin x = convert (asin (convert x) :: Posit256) :: Posit16
-  acos x = convert (acos (convert x) :: Posit256) :: Posit16
-  atan x = convert (atan (convert x) :: Posit256) :: Posit16
-  sinh x = convert (sinh (convert x) :: Posit256) :: Posit16
-  cosh x = convert (cosh (convert x) :: Posit256) :: Posit16
-  asinh x = convert (asinh (convert x) :: Posit256) :: Posit16
-  acosh x = convert (acosh (convert x) :: Posit256) :: Posit16
-  atanh x = convert (atanh (convert x) :: Posit256) :: Posit16
 
-instance Floating Posit32 where
-  pi = convert (pi :: Posit256) :: Posit32
-  exp x = convert (exp (convert x) :: Posit256) :: Posit32
-  log x = convert (log (convert x) :: Posit256) :: Posit32
-  x ** y = convert $ (convert x :: Posit256) ** (convert y :: Posit256) :: Posit32
-  sin x = convert (sin (convert x) :: Posit256) :: Posit32
-  cos x = convert (cos (convert x) :: Posit256) :: Posit32
-  asin x = convert (asin (convert x) :: Posit256) :: Posit32
-  acos x = convert (acos (convert x) :: Posit256) :: Posit32
-  atan x = convert (atan (convert x) :: Posit256) :: Posit32
-  sinh x = convert (sinh (convert x) :: Posit256) :: Posit32
-  cosh x = convert (cosh (convert x) :: Posit256) :: Posit32
-  asinh x = convert (asinh (convert x) :: Posit256) :: Posit32
-  acosh x = convert (acosh (convert x) :: Posit256) :: Posit32
-  atanh x = convert (atanh (convert x) :: Posit256) :: Posit32
+-- Functions to step up and down in Resolution of the trancendental
+-- functions so that we get properly rounded results upto 128-bits
+-- Note: 256-bit resolution will not have ulp accuracy
+hiRezNext :: forall es. (PositC es, PositC (Next es)) => (Posit (Next es) -> Posit (Next es)) -> Posit es -> Posit es
+hiRezNext f x = convert (f (convert x) :: Posit (Next es)) :: Posit es
 
-instance Floating Posit64 where
-  pi = convert (pi :: Posit256) :: Posit64
-  exp x = convert (exp (convert x) :: Posit256) :: Posit64
-  log x = convert (log (convert x) :: Posit256) :: Posit64
-  x ** y = convert $ (convert x :: Posit256) ** (convert y :: Posit256) :: Posit64
-  sin x = convert (sin (convert x) :: Posit256) :: Posit64
-  cos x = convert (cos (convert x) :: Posit256) :: Posit64
-  asin x = convert (asin (convert x) :: Posit256) :: Posit64
-  acos x = convert (acos (convert x) :: Posit256) :: Posit64
-  atan x = convert (atan (convert x) :: Posit256) :: Posit64
-  sinh x = convert (sinh (convert x) :: Posit256) :: Posit64
-  cosh x = convert (cosh (convert x) :: Posit256) :: Posit64
-  asinh x = convert (asinh (convert x) :: Posit256) :: Posit64
-  acosh x = convert (acosh (convert x) :: Posit256) :: Posit64
-  atanh x = convert (atanh (convert x) :: Posit256) :: Posit64
+hiRezMax :: forall es. (PositC es, PositC (Max es)) => (Posit (Max es) -> Posit (Max es)) -> Posit es -> Posit es
+hiRezMax f x = convert (f (convert x) :: Posit (Max es)) :: Posit es
 
-instance Floating Posit128 where
-  pi = convert (pi :: Posit256) :: Posit128
-  exp x = convert (exp (convert x) :: Posit256) :: Posit128
-  log x = convert (log (convert x) :: Posit256) :: Posit128
-  x ** y = convert $ (convert x :: Posit256) ** (convert y :: Posit256) :: Posit128
-  sin x = convert (sin (convert x) :: Posit256) :: Posit128
-  cos x = convert (cos (convert x) :: Posit256) :: Posit128
-  asin x = convert (asin (convert x) :: Posit256) :: Posit128
-  acos x = convert (acos (convert x) :: Posit256) :: Posit128
-  atan x = convert (atan (convert x) :: Posit256) :: Posit128
-  sinh x = convert (sinh (convert x) :: Posit256) :: Posit128
-  cosh x = convert (cosh (convert x) :: Posit256) :: Posit128
-  asinh x = convert (asinh (convert x) :: Posit256) :: Posit128
-  acosh x = convert (acosh (convert x) :: Posit256) :: Posit128
-  atanh x = convert (atanh (convert x) :: Posit256) :: Posit128
+hiRezNext2 :: forall es. (PositC es, PositC (Next es)) => (Posit (Next es) -> Posit (Next es) -> Posit (Next es)) -> Posit es -> Posit es -> Posit es
+hiRezNext2 f x y = convert (f (convert x :: Posit (Next es)) (convert y :: Posit (Next es)) ) :: Posit es
 
-instance Floating Posit256 where
-  pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286 :: Posit256
-  exp = funExp
-  log = funLogDomainReduction funLogTaylor
-  (**) = funPow
-  sin = funSin
-  cos = funCos
-  asin = funAsin
-  acos = funAcos
-  atan = funAtan
-  sinh = funSinh
-  cosh = funCosh
-  asinh = funAsinh
-  acosh = funAcosh
-  atanh = funAtanh
+hiRezMax2 :: forall es. (PositC es, PositC (Max es)) => (Posit (Max es) -> Posit (Max es) -> Posit (Max es)) -> Posit es -> Posit es -> Posit es
+hiRezMax2 f x y = convert (f (convert x :: Posit (Max es)) (convert y :: Posit (Max es)) ) :: Posit es
 
 
+-- =====================================================================
+--            Approximations of Trancendental Funcitons
+-- =====================================================================
 
+approx_pi :: PositC es => Posit es
+approx_pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446
 
 
-class AltFloating p where
-  phi :: p
-  gamma :: p -> p
-  sinc :: p -> p
-  expm1 :: p -> p
+approx_exp :: PositC es => Posit es -> Posit es     -- Comment by Abigale Emily:  xcddfffff
+approx_exp x = approx_2exp taylor_approx_exp (x / lnOf2)
 
-instance AltFloating Posit8 where
-  phi = convert (phi :: Posit256) :: Posit8
-  gamma x = convert (gamma (convert x) :: Posit256) :: Posit8
-  sinc x = convert (sinc (convert x) :: Posit256) :: Posit8
-  expm1 x =
-    let b = atanh $ x / 2
-    in (2 * b) / (1 - b)
 
-instance AltFloating Posit16 where
-  phi = convert (phi :: Posit256) :: Posit16
-  gamma x = convert (gamma (convert x) :: Posit256) :: Posit16
-  sinc x = convert (sinc (convert x) :: Posit256) :: Posit16
-  expm1 x =
-    let b = atanh $ x / 2
-    in (2 * b) / (1 - b)
+approx_log :: PositC es => Posit es -> Posit es
+approx_log = funLogDomainReduction funLogTaylor -- lnOf2 * approx_log2 x  -- the commented out was slightly less accurate
 
-instance AltFloating Posit32 where
-  phi = convert (phi :: Posit256) :: Posit32
-  gamma x = convert (gamma (convert x) :: Posit256) :: Posit32
-  sinc x = convert (sinc (convert x) :: Posit256) :: Posit32
-  expm1 x =
-    let b = atanh $ x / 2
-    in (2 * b) / (1 - b)
 
-instance AltFloating Posit64 where
-  phi = convert (phi :: Posit256) :: Posit64
-  gamma x = convert (gamma (convert x) :: Posit256) :: Posit64
-  sinc x = convert (sinc (convert x) :: Posit256) :: Posit64
-  expm1 x =
-    let b = atanh $ x / 2
-    in (2 * b) / (1 - b)
-
-instance AltFloating Posit128 where
-  phi = convert (phi :: Posit256) :: Posit128
-  gamma x = convert (gamma (convert x) :: Posit256) :: Posit128
-  sinc x = convert (sinc (convert x) :: Posit256) :: Posit128
-  expm1 x =
-    let b = atanh $ x / 2
-    in (2 * b) / (1 - b)
-
-instance AltFloating Posit256 where
-  phi = funPhi 1.6
-  gamma = funGammaSeries
-  sinc = funSinc
-  expm1 x =
-    let b = atanh $ x / 2
-    in (2 * b) / (1 - b)
-
-
--- | 'phi' fixed point recursive algorithm,
-funPhi :: Posit256 -> Posit256
-funPhi  px@(Posit x)
-    | x == x' = Posit x
-    | otherwise = funPhi (Posit x')
-      where
-        (Posit x') = (px^2 + 2*px) / (px^2 + 1)
-        -- LiquidHaskell is telling me this is unsafe if px is imaginary
-        -- lucky for us Posit256 is not imaginary
-
-
--- calculate atan(1/2^n)
--- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
-funArcTan :: Natural -> Posit256
-funArcTan 0 = pi / 4
-funArcTan n
-  | n <= 122 = go 0 0
-  | otherwise = z  -- at small z... (atan z) == z "small angle approximation"
-    where
-      go !k !acc
-        | acc == (acc + term k) = acc
-        | otherwise = go (k+1) (acc + term k)
-      term :: Integer -> Posit256
-      term k = ((-1)^k * z^(2 * k + 1)) / fromIntegral (2 * k + 1)
-      z = 1 / 2^n  -- recip $ 2^n :: Posit256 -- inv2PowN
-
--- seems pretty close to 1 ULP with the input of 0.7813
-funAtan :: Posit256 -> Posit256
-funAtan NaR = NaR
-funAtan x
-  | abs x < 1/2^122 = x  -- small angle approximaiton, found emperically
-  | x < 0 = negate.funAtan $ negate x  -- if negative turn it positive, it reduces the other domain reductions by half, found from Universal CORDIC
-  | x > 1 = pi/2 - funAtan (recip x)  -- if larger than one use the complementary angle, found from Universal CORDIC
-  | x > twoMsqrt3 = pi/6 + funAtan ((sqrt 3 * x - 1)/(sqrt 3 + x))  -- another domain reduction, using an identity, found from https://mathonweb.com/help_ebook/html/algorithms.htm
-  | otherwise = funArcTanTaylor x
---
-
-twoMsqrt3 :: Posit256
-twoMsqrt3 = 2 - sqrt 3
-
---
-funArcTanTaylor :: Posit256 -> Posit256
-funArcTanTaylor x = go 0 0
-  where
-    go !k !acc
-      | acc == (acc + term k) = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Integer -> Posit256
-    term k = ((-1)^k * x^(2 * k + 1)) / fromIntegral (2 * k + 1)
---
-
---
-funAsin :: Posit256 -> Posit256
-funAsin NaR = NaR
-funAsin x
-  | abs x > 1 = NaR
-  | x == 1 = pi/2
-  | x == -1 = -pi/2
-  | otherwise = funAtan w
-    where
-      w = x / sqrt (1 - x^2)
---
-
---
-funAcos :: Posit256 -> Posit256
-funAcos NaR = NaR
-funAcos x
-  | abs x > 1 = NaR
-  | x < 0 = pi + funAtan invw
-  | x == 0 = pi/2
-  | x > 0 = funAtan invw
-  | otherwise = error "Prove it covers for Rational Numbers."
-    where
-      invw = sqrt (1 - x^2) / x
---
-
--- fI2PN = (1 /) . (2 ^)
-funInv2PowN :: Natural -> Posit256
-funInv2PowN n = 1 / 2^n
-
-
--- calculate atanh(1/2^n)
--- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
-funArcHypTan :: Natural -> Posit256
-funArcHypTan 0 = NaR
-funArcHypTan n
-  | n <= 122 = go 0 0
-  | otherwise = z  -- at small z... (atan z) == z "small angle approximation"
-    where
-      go !k !acc
-        | acc == (acc + term k) = acc
-        | otherwise = go (k+1) (acc + term k)
-      term :: Integer -> Posit256
-      term k = (z^(2 * k + 1)) / fromIntegral (2 * k + 1)
-      z = 1 / 2^n
-
-
-fac :: Natural -> Natural
-fac 0 = 1
-fac n = n * fac (n - 1)
-
---
-funAsinh :: Posit256 -> Posit256
-funAsinh NaR = NaR
-funAsinh x = log $ x + sqrt (x^2 + 1)
---
-
---
-funAcosh :: Posit256 -> Posit256
-funAcosh NaR = NaR
-funAcosh x
-  | x < 1 = NaR
-  | otherwise = log $ x + sqrt (x^2 - 1)
---
-
---
-funAtanh :: Posit256 -> Posit256
-funAtanh NaR = NaR
-funAtanh x
-  | abs x >= 1 = NaR
-  | x < 0 = negate.funAtanh.negate $ x  -- make use of odd parity to only calculate the positive part
-  | otherwise = 0.5 * log ((1+t) / (1-t)) - (fromIntegral ex / 2) * lnOf2
-    where
-      (ex, sig) = (int * fromIntegral (nBytes @V) + fromIntegral nat + 1, fromRational rat / 2)
-      (_,int,nat,rat) = (posit2TupPosit @V).toRational $ x' -- sign should always be positive
-      x' = 1 - x
-      t = (2 - sig - x') / (2 + sig - x')
---
-
---
-funAtanhTaylor :: Posit256 -> Posit256
-funAtanhTaylor NaR = NaR
-funAtanhTaylor x
-  | abs x >= 1 = NaR
-  | abs x < 1/2^122 = x  -- small angle approximaiton, found emperically
-  | x < 0 = negate.funAtanhTaylor.negate $ x
-  | otherwise = go 0 0
-    where
-      go !k !acc
-        | acc == (acc + term k) = acc
-        | otherwise = go (k+1) (acc + term k)
-      term :: Integer -> Posit256
-      term k = (x^(2 * k + 1)) / fromIntegral (2 * k + 1)
---
-
---
-funSin :: Posit256 -> Posit256
-funSin NaR = NaR
-funSin 0 = 0
-funSin x = funSin' $ x / (2*pi)
---
--- funSin' is sine normalized by 2*pi
-funSin' :: Posit256 -> Posit256
-funSin' x
-  | x == 0 = 0
-  | x == 0.25 = 1
-  | x == 0.5 = 0
-  | x == 0.75 = -1
-  | x == 1 = 0
-  | x < 0 = negate.funSin'.negate $ x
-  | x > 1 =
-    let (_,rem) = properFraction x
-    in funSin' rem
-  | x > 0.75 && x < 1 = negate.funSin' $ 1 - x -- reduce domain by quadrant symmetry
-  | x > 0.5 && x < 0.75 = negate.funSin' $ x - 0.5
-  | x > 0.25 && x < 0.5 = funSin' $ 0.5 - x
-  | x > 0.125 && x < 0.25 = funCosTuma $ 2*pi * (0.25 - x) -- reduce domain and use cofunction
-  | otherwise = funSinTuma $ 2*pi * x
---
-
--- Taylor series expansion and fixed point algorithm, most accurate near zero
-funSinTaylor :: Posit256 -> Posit256
-funSinTaylor NaR = NaR
-funSinTaylor z = go 0 0
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | acc == (acc + term k) = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
-    term k = (-1)^k * z^(2*k+1) / (fromIntegral.fac $ 2*k+1)
---
-
---
-funSinTuma :: Posit256 -> Posit256
-funSinTuma NaR = NaR
-funSinTuma z = go 19 1
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go 1 !acc = z * acc
-    go !k !acc = go (k-1) (1 - (z^2 / fromIntegral ((2*k-2)*(2*k-1))) * acc)
---
-
---
-funCos :: Posit256 -> Posit256
-funCos NaR = NaR
-funCos 0 = 1
-funCos x = funCos' $ x / (2*pi)
---
--- funCos' is cosine normalized for 2*pi
-funCos' :: Posit256 -> Posit256
-funCos' NaR = NaR
-funCos' x
-  | x == 0 = 1
-  | x == 0.25 = 0
-  | x == 0.5 = -1
-  | x == 0.75 = 0
-  | x == 1 = 1
-  | x < 0 = funCos'.negate $ x  -- reduce domain by symmetry across 0 to turn x positive
-  | x > 1 = -- reduce domain by using perodicity
-    let (_,rem) = properFraction x
-    in funCos' rem
-  | x > 0.75 && x < 1 = funCos' $ 1 - x  -- reduce domain by quadrant symmetry
-  | x > 0.5 && x < 0.75 = negate.funCos' $ x - 0.5
-  | x > 0.25 && x < 0.5 = negate.funCos' $ 0.5 - x
-  | x > 0.125 && x < 0.25 = funSinTuma $ 2*pi * (0.25 - x) -- reduce domain and use cofunction
-  | otherwise = funCosTuma $ 2*pi * x --
---
-
--- Taylor series expansion and fixed point algorithm, most accurate near zero
-funCosTaylor :: Posit256 -> Posit256
-funCosTaylor NaR = NaR
-funCosTaylor z = go 0 0
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | acc == (acc + term k) = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
-    term k = (-1)^k * z^(2*k) / (fromIntegral.fac $ 2*k)
---
-
---
-funCosTuma :: Posit256 -> Posit256
-funCosTuma NaR = NaR
-funCosTuma z = go 19 1
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go 1 !acc = acc
-    go !k !acc = go (k-1) (1 - (z^2 / fromIntegral ((2*k-3)*(2*k-2))) * acc)
---
-
--- ~16 ULP for 42
-funSinh :: Posit256 -> Posit256
-funSinh NaR = NaR
-funSinh x = (exp x - exp (negate x))/2
---
-
--- ~2 ULP for 42
-funSinhTaylor :: Posit256 -> Posit256
-funSinhTaylor NaR = NaR
-funSinhTaylor z = go 0 0
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | acc == (acc + term k) = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
-    term k = z^(2*k+1) / (fromIntegral.fac $ 2*k+1)
---
-
---
-funSinhTuma :: Posit256 -> Posit256
-funSinhTuma NaR = NaR
-funSinhTuma 0 = 0
-funSinhTuma z | z < 0 = negate.funSinhTuma.negate $ z
-funSinhTuma z | z > 80 = 0.5 * funExpTuma z
-funSinhTuma z = go 256 1
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go 1 !acc = z * acc
-    go !k !acc = go (k-1) (1 + (z^2 / fromIntegral ((2*k-2) * (2*k-1))) * acc)
---
-
--- ~17 ULP for 42
-funCosh :: Posit256 -> Posit256
-funCosh NaR = NaR
-funCosh x = (exp x + exp (negate x))/2
---
-
--- ~3 ULP for 42
-funCoshTaylor :: Posit256 -> Posit256
-funCoshTaylor NaR = NaR
-funCoshTaylor z = go 0 0
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | acc == (acc + term k) = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
-    term k = z^(2*k) / (fromIntegral.fac $ 2*k)
---
-
---
-funCoshTuma :: Posit256 -> Posit256
-funCoshTuma NaR = NaR
-funCoshTuma 0 = 1
-funCoshTuma z | z < 0 = funCoshTuma.negate $ z
-funCoshTuma z | z > 3 = 0.5 * (funExpTuma z + funExpTuma (negate z))
-funCoshTuma z = go 20 1
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go 1 !acc = acc
-    go !k !acc = go (k-1) (1 + (z^2 / fromIntegral ((2*k-3)*(2*k-2)))*acc)
---
-
-
---
-funLog :: Posit256 -> Posit256
-funLog x = funLog2 x * lnOf2
---
-
---
--- Use the constant, for performance
-lnOf2 :: Posit256
-lnOf2 = Posit 28670435363615573179632300308403400109260626501925370561166468529302554498548
---
-
---
--- Some series don't converge reliably, this one does
-funLnOf2 :: Posit256
-funLnOf2 = go 1 0
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | acc == (acc + term k) = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
-    term k = 1 / fromIntegral (2^k * k)
---
-
---
-funLog2 :: Posit256 -> Posit256
-funLog2 NaR = NaR
-funLog2 z
-  | z <= 0 = NaR -- includes the NaR case
-  | otherwise = go (fromInteger ex) 1 sig  -- domain reduction
-    where
-      go :: Posit256 -> Posit256 -> Posit256 -> Posit256
-      go !acc !mak !sig' -- fixed point iteration, y is [1,2) :: Posit256
-        | sig == 1 = acc
-        | acc == (acc + mak * 2^^(negate.fst.term $ sig')) = acc  -- stop when fixed point is reached
-        | otherwise = go (acc + mak * 2^^(negate.fst.term $ sig')) (mak * 2^^(negate.fst.term $ sig')) (snd.term $ sig')
-      term = findSquaring 0  -- returns (m,s') m the number of times to square, and the new significand
-      (ex, sig) = (int * fromIntegral (nBytes @V) + fromIntegral nat, fromRational rat)
-      (_,int,nat,rat) = (posit2TupPosit @V).toRational $ z -- sign should always be positive
-      findSquaring m s
-        | s >= 2 && s < 4 = (m, s/2)
-        | otherwise = findSquaring (m+1) (s^2)
---
-
-
---  Gauss–Legendre algorithm, Seems only accurate to 2-3 ULP, but really slow
-funPi1 :: Posit256
-funPi1 = go 0 3 1 (recip.sqrt $ 2) (recip 4) 1
-  where
-    go :: Posit256 -> Posit256 -> Posit256 -> Posit256 -> Posit256 -> Posit256 -> Posit256
-    go !prev !next !a !b !t !p
-      | prev == next = next
-      | otherwise =
-        let a' = (a + b) / 2
-            b' = sqrt $ a * b
-            t' = t - p * (a - ((a + b) / 2))^2
-            p' = 2 * p
-        in go next ((a' + b')^2 / (4 * t')) a' b' t' p'
---
-
-#ifndef O_NO_SHOW
---  Borwein's algorithm, with quintic convergence,
---  gets to 7 ULP in 4 iterations, but really slow due to expensive function evaluations
---  quite unstable and will not converge if sqrt is not accurate, which means log must be accurate
-funPi2 :: Posit256
-funPi2 = recip $ go 0 0 0.5 (5 / phi^3)
-  where
-    go :: Posit256 -> Natural -> Posit256 -> Posit256 -> Posit256
-    go !prev !n !a !s
-      | prev == a = a
-      | otherwise =
-        let x = 5 / s - 1
-            y = (x - 1)^2 + 7
-            z = (0.5 * x * (y + sqrt (y^2 - 4 * x^3)))**(1/5)
-            a' = s^2 * a - (5^n * ((s^2 - 5)/2 + sqrt (s * (s^2 - 2*s + 5))))
-            s' = 25 / ((z + x/z + 1)^2 * s)
-        in go a (n+1) (trace (show a') a') s'
---
-#endif
-
-
--- Bailey–Borwein–Plouffe (BBP) formula, to 1-2 ULP, and blazing fast, converges in 60 iterations
-funPi3 :: Posit256
-funPi3 = go 0 0
-  where
-    go :: Integer -> Posit256 -> Posit256
-    go !k !acc
-      | acc == acc + term k = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Integer -> Posit256
-    term k = fromRational $ (1 % 16^k) * ((120 * k^2 + 151 * k + 47) % (512 * k^4 + 1024 * k^3 + 712 * k^2 + 194 * k + 15))
---
-
-
--- Fabrice Bellard improvement on the BBP, 2-3 ULP, even faster, converges in 25 iterations, really fast
-funPi4 :: Posit256
-funPi4 = (1/2^6) * go 0 0
-  where
-    go :: Integer -> Posit256 -> Posit256
-    go !k !acc
-      | acc == acc + term k = acc
-      | otherwise = go (k+1) (acc + term k)
-    term :: Integer -> Posit256
-    term k = fromRational $ ((-1)^k % (2^(10*k))) * ((1 % (10 * k + 9)) - (2^2 % (10 * k + 7)) - (2^2 % (10 * k + 5)) - (2^6 % (10 * k + 3)) + (2^8 % (10 * k + 1)) - (1 % (4 * k + 3)) - (2^5 % (4 * k + 1)))
---
-
-
-
---
--- looks to be about 4 ULP accurate at -100, right on the money at -1000
-funExp :: Posit256 -> Posit256
-funExp x = funExp2 funExpTaylor (x / lnOf2)
---
-
---
---
-funExp2 :: (Posit256 -> Posit256) -> Posit256 -> Posit256
-funExp2 _ NaR = NaR
-funExp2 _ 0 = 1
-funExp2 f x
-  | x < 0 = recip.funExp2 f.negate $ x  -- always calculate the positive method
-  | otherwise = case properFraction x of
-                  (int,rem) -> fromIntegral (2^int) * f (lnOf2 * rem)
-
-
-
---
--- calculate exp, its most accurate near zero
--- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
-funExpTaylor :: Posit256 -> Posit256
-funExpTaylor NaR = NaR
-funExpTaylor 0 = 1
-funExpTaylor z = go 0 0
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | acc == (acc + term k) = acc  -- if x == x + dx then terminate and return x
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
-    term k = (z^k) / (fromIntegral.fac $ k)
---
-
---
--- calculate exp, its most accurate near zero
--- use the Nested Series of Jan J Tuma
-funExpTuma :: Posit256 -> Posit256
-funExpTuma NaR = NaR
-funExpTuma 0 = 1
-funExpTuma z = go 57 1 -- was 66
-  where
-    go :: Natural -> Posit256 -> Posit256
-    go !k !acc
-      | k == 0 = acc
-      | otherwise = go (k-1) (1 + (z / fromIntegral k) * acc)
---
-
---
---
-funPow :: Posit256 -> Posit256 -> Posit256
-NaR `funPow` _ = NaR
-_ `funPow` NaR = NaR
-funPow 0 y
+approx_pow :: (PositC es) => Posit es -> Posit es -> Posit es
+NaR `approx_pow` _ = NaR
+_ `approx_pow` NaR = NaR
+approx_pow 0 y
   | y < 0 = NaR -- NaR: Divide by Zero
   | y == 0 = NaR -- NaR: Indeterminate
   | y > 0 = 0
-funPow x y
-  | y < 0 = recip $ funPow x (negate y)
+approx_pow x y
+  | y < 0 = recip $ approx_pow x (negate y)
   | x < 0 = -- NaR if y is not an integer
     let (int,rem) = properFraction y
     in if rem == 0
        then x^^int
        else NaR -- NaR: Imaginary Number
-  | otherwise = exp $ y * log x
---
-
--- Looks like 1 ULP for 0.7813
-funSinc :: Posit256 -> Posit256
-funSinc NaR = NaR
-funSinc 0 = 1  -- Why the hell not!
-funSinc theta = sin theta / theta
---
-
--- Interestingly enough, wikipedia defines two alternative solutions
--- for the Shannon Wavelet, eventhough there are infinite solutions
--- where the functions are equal, they are not equal.  It a class of 
--- functions with the charicteristic of being a band pass filter in the 
--- frequency space.
--- Shannon wavelet
-funPsiSha1 :: Posit256 -> Posit256
-funPsiSha1 NaR = NaR
-funPsiSha1 t = 2 * funSinc (2 * t) - funSinc t
---
-
--- Shannon wavelet
-funPsiSha2 :: Posit256 -> Posit256
-funPsiSha2 NaR = NaR
-funPsiSha2 t = funSinc (t/2) * cos (3*pi*t/2)
---
-
--- Shannon wavelet, same as funPsiSha1 but with a factor of pi, with the
--- Law: funPsiSha1.(pi*) === funPsiSha3
--- or : funPsiSha1 === funpsiSha3.(/pi)
--- Posit256 seems to hold to a few ULP
-funPsiSha3 :: Posit256 -> Posit256
-funPsiSha3 NaR = NaR
-funPsiSha3 0 = 1  -- Why the hell not!
-funPsiSha3 t =
-  let pit = pi * t
-      invpit = recip pit 
-  in invpit * (sin (2 * pit) - sin pit)
---
+  | otherwise = approx_exp $ y * approx_log x
 
 
+approx_sin :: forall es. PositC es => Posit es -> Posit es
+approx_sin  NaR = NaR
+approx_sin 0 = 0
+approx_sin x = normalizedSine $ x / (2*approx_pi)
 
--- Using the CORDIC domain reduction and some approximation function
-funLogDomainReduction :: (Posit256 -> Posit256) -> Posit256 -> Posit256
+
+approx_cos :: PositC es => Posit es -> Posit es
+approx_cos NaR = NaR
+approx_cos 0 = 1
+approx_cos x = normalizedCosine $ x / (2*approx_pi)
+
+
+approx_asin :: PositC es => Posit es -> Posit es
+approx_asin NaR = NaR
+approx_asin x
+  | abs x > 1 = NaR
+  | x == 1 = approx_pi/2
+  | x == -1 = -approx_pi/2
+  | otherwise = approx_atan w
+    where
+      w = x / approx_sqrt (1 - x^2)
+
+
+approx_acos :: PositC es => Posit es -> Posit es
+approx_acos NaR = NaR
+approx_acos x
+  | abs x > 1 = NaR
+  | x < 0 = approx_pi + approx_atan invw
+  | x == 0 = approx_pi/2
+  | x > 0 = approx_atan invw
+  | otherwise = error "Prove it covers for Rational Numbers."
+    where
+      invw = approx_sqrt (1 - x^2) / x
+
+
+approx_atan :: PositC es => Posit es -> Posit es
+approx_atan NaR = NaR
+approx_atan x
+  | abs x < 1/2^122 = x  -- small angle approximaiton, found emperically
+  | x < 0 = negate.approx_atan $ negate x  -- if negative turn it positive, it reduces the other domain reductions by half, found from Universal CORDIC
+  | x > 1 = approx_pi/2 - approx_atan (recip x)  -- if larger than one use the complementary angle, found from Universal CORDIC
+  | x > twoMsqrt3 = approx_pi/6 + approx_atan ((approx_sqrt 3 * x - 1)/(approx_sqrt 3 + x))  -- another domain reduction, using an identity, found from https://mathonweb.com/help_ebook/html/algorithms.htm
+  | otherwise = taylor_approx_atan x
+
+
+approx_sinh :: PositC es => Posit es -> Posit es
+approx_sinh NaR = NaR
+approx_sinh x = (approx_exp x - approx_exp (negate x))/2
+
+
+approx_cosh :: PositC es => Posit es -> Posit es
+approx_cosh NaR = NaR
+approx_cosh x = (approx_exp x + approx_exp (negate x))/2
+
+
+approx_asinh :: PositC es => Posit es -> Posit es
+approx_asinh NaR = NaR
+approx_asinh x = approx_log $ x + approx_sqrt (x^2 + 1)
+
+
+approx_acosh :: PositC es => Posit es -> Posit es
+approx_acosh NaR = NaR
+approx_acosh x
+  | x < 1 = NaR
+  | otherwise = approx_log $ x + approx_sqrt (x^2 - 1)
+
+
+approx_atanh :: forall es. PositC es => Posit es -> Posit es
+approx_atanh NaR = NaR
+approx_atanh x
+  | abs x >= 1 = NaR
+  | x < 0 = negate.approx_atanh.negate $ x  -- make use of odd parity to only calculate the positive part
+  | otherwise = 0.5 * approx_log ((1+t) / (1-t)) - (fromIntegral ex / 2) * lnOf2
+    where
+      (ex, sig) = (int * fromIntegral (2^(exponentSize @es)) + fromIntegral nat + 1, fromRational rat / 2)
+      (_,int,nat,rat) = (posit2TupPosit @es).toRational $ x' -- sign should always be positive
+      x' = 1 - x
+      t = (2 - sig - x') / (2 + sig - x')
+
+
+
+-- =====================================================================
+--     Normalized Functions or Alternative Bases
+-- =====================================================================
+
+-- normalizedSine is sine normalized by 2*pi
+normalizedSine :: PositC es => Posit es -> Posit es
+normalizedSine NaR = NaR
+normalizedSine x
+  | x == 0 = 0
+  | x == 0.25 = 1
+  | x == 0.5 = 0
+  | x == 0.75 = -1
+  | x == 1 = 0
+  | x < 0 = negate.normalizedSine.negate $ x
+  | x > 1 =
+    let (_,rem) = properFraction x
+    in normalizedSine rem
+  | x > 0.75 && x < 1 = negate.normalizedSine $ 1 - x -- reduce domain by quadrant symmetry
+  | x > 0.5 && x < 0.75 = negate.normalizedSine $ x - 0.5
+  | x > 0.25 && x < 0.5 = normalizedSine $ 0.5 - x
+  | x > 0.125 && x < 0.25 = tuma_approx_cos $ 2*approx_pi * (0.25 - x) -- reduce domain and use cofunction
+  | otherwise = tuma_approx_sin $ 2*approx_pi * x
+
+
+-- normalizedCosine is cosine normalized for 2*pi
+normalizedCosine :: PositC es => Posit es -> Posit es
+normalizedCosine NaR = NaR
+normalizedCosine x
+  | x == 0 = 1
+  | x == 0.25 = 0
+  | x == 0.5 = -1
+  | x == 0.75 = 0
+  | x == 1 = 1
+  | x < 0 = normalizedCosine.negate $ x  -- reduce domain by symmetry across 0 to turn x positive
+  | x > 1 = -- reduce domain by using perodicity
+    let (_,rem) = properFraction x
+    in normalizedCosine rem
+  | x > 0.75 && x < 1 = normalizedCosine $ 1 - x  -- reduce domain by quadrant symmetry
+  | x > 0.5 && x < 0.75 = negate.normalizedCosine $ x - 0.5
+  | x > 0.25 && x < 0.5 = negate.normalizedCosine $ 0.5 - x
+  | x > 0.125 && x < 0.25 = tuma_approx_sin $ 2*approx_pi * (0.25 - x) -- reduce domain and use cofunction
+  | otherwise = tuma_approx_cos $ 2*approx_pi * x --
+
+
+-- Approximation of 2^x Domain Reduction
+approx_2exp :: PositC es => (Posit es -> Posit es) -> Posit es -> Posit es
+approx_2exp _ NaR = NaR
+approx_2exp _ 0 = 1
+approx_2exp f x
+  | x < 0 = recip.approx_2exp f.negate $ x  -- always calculate the positive method
+  | otherwise = case properFraction x of
+                  (int,rem) -> fromIntegral (2^int) * f (lnOf2 * rem)
+
+
+
+
+-- Using the CORDIC domain reduction and some approximation function of log
+funLogDomainReduction :: forall es. PositC es => (Posit es -> Posit es) -> Posit es -> Posit es
 funLogDomainReduction _ NaR = NaR
 funLogDomainReduction _ 1 = 0
 funLogDomainReduction f x
   | x <= 0 = NaR
   | otherwise = f sig + (fromIntegral ex * lnOf2)
     where
-      (ex, sig) = (int * fromIntegral (nBytes @V) + fromIntegral nat + 1, fromRational rat / 2) -- move significand range from 1,2 to 0.5,1
-      (_,int,nat,rat) = (posit2TupPosit @V).toRational $ x -- sign should always be positive
+      (ex, sig) = (int * fromIntegral (2^(exponentSize @es)) + fromIntegral nat + 1, fromRational rat / 2) -- move significand range from 1,2 to 0.5,1
+      (_,int,nat,rat) = (posit2TupPosit @es).toRational $ x -- sign should always be positive
      
  
 
 -- natural log with log phi acurate to 9 ULP
-funLogTaylor :: Posit256 -> Posit256
+funLogTaylor :: forall es. PositC es => Posit es -> Posit es
 funLogTaylor NaR = NaR
 funLogTaylor 1 = 0
 funLogTaylor x | x <= 0 = NaR
@@ -1321,83 +846,158 @@ funLogTaylor x
   | x <= 2 = go 1 0
   | otherwise = error "The funLogTaylor algorithm is being used improperly"
     where
-      go :: Natural -> Posit256 -> Posit256
+      go :: Natural -> Posit es -> Posit es
       go !k !acc
         | acc == (acc + term k) = acc
         | otherwise = go (k + 1) (acc + term k)
-      term :: Natural -> Posit256
+      term :: Natural -> Posit es
       term k = (-1)^(k+1) * (x - 1)^k / fromIntegral k
      
 
 
 
--- natural log the Jan J Tuma way
-funLogTuma :: Posit256 -> Posit256
-funLogTuma NaR = NaR
-funLogTuma 1 = 0  -- domain reduced input is [0.5,1) and/or , where funLogTuma 1 = 0
-funLogTuma x | x <= 0 = NaR  -- zero and less than zero is NaR
-funLogTuma x
-  = go 242 1
-    where
-      xM1 = x - 1  -- now [-0.5, 0)
-      go :: Natural -> Posit256 -> Posit256
-      go !k !acc
-        | k == 0 = xM1 * acc
-        | otherwise = go (k-1) (recip (fromIntegral k) - xM1 * acc)
-
-
-funGammaRamanujan :: Posit256 -> Posit256
-funGammaRamanujan z = sqrt pi * (x / exp 1)**x * (8*x^3 + 4*x^2 + x + (1/30))**(1/6)
-  where
-    x = z - 1
+-- =====================================================================
+--       Taylor Series Fixed Point Approximations
+-- =====================================================================
 
 --
-a001163 :: [Integer] -- Numerator
-a001163 = [1, 1, -139, -571, 163879, 5246819, -534703531, -4483131259, 432261921612371, 6232523202521089, -25834629665134204969, -1579029138854919086429, 746590869962651602203151, 1511513601028097903631961, -8849272268392873147705987190261, -142801712490607530608130701097701]
-a001164 :: [Integer]  -- Denominator
-a001164 = [12, 288, 51840, 2488320, 209018880, 75246796800, 902961561600, 86684309913600, 514904800886784000, 86504006548979712000, 13494625021640835072000, 9716130015581401251840000, 116593560186976815022080000, 2798245444487443560529920000, 299692087104605205332754432000000, 57540880724084199423888850944000000]
-
-funGammaSeries :: Posit256 -> Posit256
-funGammaSeries z = sqrt(2 * pi) * (z**(z - 0.5)) * exp (negate z) * (1 + series)
+taylor_approx_atan :: forall es. PositC es => Posit es -> Posit es
+taylor_approx_atan NaR = NaR
+taylor_approx_atan x = go 0 0
   where
-    series :: Posit256
+    go !k !acc
+      | acc == (acc + term k) = acc
+      | otherwise = go (k+1) (acc + term k)
+    term :: Integer -> Posit es
+    term k = ((-1)^k * x^(2 * k + 1)) / fromIntegral (2 * k + 1)
+--
+
+
+-- calculate exp, its most accurate near zero
+-- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
+taylor_approx_exp :: forall es. PositC es => Posit es -> Posit es
+taylor_approx_exp NaR = NaR
+taylor_approx_exp 0 = 1
+taylor_approx_exp z = go 0 0
+  where
+    go :: Natural -> Posit es -> Posit es
+    go !k !acc
+      | acc == (acc + term k) = acc  -- if x == x + dx then terminate and return x
+      | otherwise = go (k+1) (acc + term k)
+    term :: Natural -> Posit es
+    term k = (z^k) / (fromIntegral.fac $ k)
+--
+
+
+-- =====================================================================
+--  High Order Taylor Series transformed to Horner's Method
+--     from Jan J Tuma's "Handbook of Numerical Calculations in Engineering" 
+-- =====================================================================
+
+--
+tuma_approx_cos :: forall es. PositC es => Posit es -> Posit es
+tuma_approx_cos NaR = NaR
+tuma_approx_cos z = go 19 1  -- TODO can the order be selected based on the word size?
+  where
+    go :: Natural -> Posit es -> Posit es
+    go 1 !acc = acc
+    go !k !acc = go (k-1) (1 - (z^2 / fromIntegral ((2*k-3)*(2*k-2))) * acc)
+--
+
+--
+tuma_approx_sin :: forall es. PositC es => Posit es -> Posit es
+tuma_approx_sin NaR = NaR
+tuma_approx_sin z = go 19 1  -- TODO can the order be selected based on the word size?
+  where
+    go :: Natural -> Posit es -> Posit es
+    go 1 !acc = z * acc
+    go !k !acc = go (k-1) (1 - (z^2 / fromIntegral ((2*k-2)*(2*k-1))) * acc)
+--
+
+
+
+-- =========================================================
+--           Alternate Floating of a Posit es
+-- =========================================================
+
+class AltFloating p where
+  eps :: p
+  phi :: p
+  gamma :: p -> p
+  sinc :: p -> p
+  expm1 :: p -> p
+
+--
+instance PositC es => AltFloating (Posit es) where
+  phi = 1.6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374847540880753868917521266338   -- approx_phi 1.6
+  eps = succ 1.0 - 1.0
+  gamma = approx_gamma
+  sinc = approx_sinc
+  expm1 x =
+    let b = approx_atanh $ x / 2
+    in (2 * b) / (1 - b)
+
+
+
+
+
+
+approx_gamma :: forall es. PositC es => Posit es -> Posit es
+approx_gamma z = approx_sqrt(2 * approx_pi) * (z `approx_pow` (z - 0.5)) * approx_exp (negate z) * (1 + series)
+  where
+    series :: Posit es
     series = sum $ zipWith (*) [fromRational (a % b) | (a,b) <- zip a001163 a001164] [recip $ z^n |  n <- [1..len]]  -- zipWith (\x y -> ) a001163 a001164
     lenA = length a001163
     lenB = length a001164
     len = if lenA == lenB
             then lenA
             else error "Seiries Numerator and Denominator do not have the same length."
-
-funGammaSeriesFused :: Posit256 -> Posit256
-funGammaSeriesFused z = sqrt(2 * pi) * (z**(z - 0.5)) * exp (negate z) * (1 + series)
-  where
-    series :: Posit256
-    series = fsumL $ zipWith (*) [fromRational (a % b) | (a,b) <- zip a001163 a001164] [recip $ z^n |  n <- [1..len]]  -- zipWith (\x y -> ) a001163 a001164
-    lenA = length a001163
-    lenB = length a001164
-    len = if lenA == lenB
-            then lenA
-            else error "Seiries Numerator and Denominator do not have the same length."
 --
 
-funGammaCalc :: Posit256 -> Posit256
-funGammaCalc z = sqrt (2*pi / z) * ((z / exp 1) * sqrt (z * sinh (recip z) + recip (810 * z^6)))**z
+
+-- Looks like 1 ULP for 0.7813
+approx_sinc :: PositC es => Posit es -> Posit es
+approx_sinc NaR = NaR
+approx_sinc 0 = 1  -- Why the hell not!
+approx_sinc theta = approx_sin theta / theta
+--
 
 
-funGammaNemes :: Posit256 -> Posit256
-funGammaNemes z = sqrt (2*pi / z) * (recip (exp 1) * (z + recip (12 * z - recip (10 * z))))**z
 
-funGammaYang :: Posit256 -> Posit256
-funGammaYang z = sqrt (2 * pi * x) * (x / exp 1)**x * (x * sinh (recip x))**(x/2) * exp (fromRational (7 % 324) * recip (x^3 * (35 * x^2 + 33)))
-  where
-    x = z - 1
+-- =====================================================================
+--    Useful Constants
+-- =====================================================================
 
-funGammaChen :: Posit256 -> Posit256
-funGammaChen z = sqrt (2 * pi * x) * (x / exp 1)**x * (1 + recip (12*x^3 + (24/7)*x - 0.5))**(x^2 + fromRational (53 % 210))
-  where
-    x = z - 1
+--
+-- Use the constant, for performance
+lnOf2 :: PositC es => Posit es
+lnOf2 = 0.6931471805599453094172321214581765680755001343602552541206800094933936219696947156058633269964186875420014810205706857336855202
+--
 
-funGammaXminus1 :: Posit256 -> Posit256
-funGammaXminus1 x = go (x - 1)
-  where
-    go z = sqrt (2 * pi) * exp z ** (negate z) * z ** (z + 0.5)
+--
+a001163 :: [Integer] -- Numerator
+a001163 = [1, 1, -139, -571, 163879, 5246819, -534703531, -4483131259, 432261921612371, 6232523202521089, -25834629665134204969, -1579029138854919086429, 746590869962651602203151, 1511513601028097903631961, -8849272268392873147705987190261, -142801712490607530608130701097701]
+a001164 :: [Integer]  -- Denominator
+a001164 = [12, 288, 51840, 2488320, 209018880, 75246796800, 902961561600, 86684309913600, 514904800886784000, 86504006548979712000, 13494625021640835072000, 9716130015581401251840000, 116593560186976815022080000, 2798245444487443560529920000, 299692087104605205332754432000000, 57540880724084199423888850944000000]
+--
+
+twoMsqrt3 :: PositC es => Posit es
+twoMsqrt3 = 2 - approx_sqrt 3
+
+
+
+-- =====================================================================
+--    Helper Funcitons
+-- =====================================================================
+
+-- Factorial Function of type Natural
+fac :: Natural -> Natural
+fac 0 = 1
+fac n = n * fac (n - 1)
+--
+
+approx_sqrt :: PositC es => Posit es -> Posit es
+approx_sqrt x = approx_pow x 0.5
+
+
+

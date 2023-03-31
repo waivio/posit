@@ -1,14 +1,14 @@
 
 --------------------------------------------------------------------------------------------
 --
---   Copyright   :  (C) 2022 Nathan Waivio
+--   Copyright   :  (C) 2022-2023 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
 --   Portability :  Portable
 --
--- | Library implementing standard 'Posit-3.2' numbers, as defined by
---   the Posit Working Group 23 June 2018.
+-- | Library implementing standard 'Posit-3.2', and 'Posit-2022' numbers, as defined by
+--   the Posit Working Group 23 June 2018, and in 2022 respectively.
 -- 
 -- 
 ---------------------------------------------------------------------------------------------
@@ -22,6 +22,8 @@
 {-# LANGUAGE FlexibleContexts #-} -- To reduce some code duplication by claiming the type family provides some constraints, that GHC can't do without fully evaluating the type family
 {-# LANGUAGE ConstrainedClassMethods #-} -- Allows constraints on class methods so default implementations of methods with Type Families can be implemented
 {-# LANGUAGE ConstraintKinds #-}  -- Simplify all of the constraints into a combinded constraint for the super class constraint
+{-# LANGUAGE DerivingVia #-}  -- To Derive instances for newtypes to eliminate Orphan Instances
+{-# LANGUAGE UndecidableInstances #-}  -- For deriving DoubleWord
 {-# LANGUAGE CPP #-} -- To remove Storable instances to remove noise when performing analysis of Core
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}  -- Turn off noise
 {-# OPTIONS_GHC -Wno-type-defaults #-}  -- Turn off noise
@@ -37,7 +39,9 @@ module Posit.Internal.PositC
 (PositC(..),
  ES(..),
  IntN,
- FixedWidthInteger()
+ FixedWidthInteger(),
+ Max,
+ Next
  ) where
 
 import Prelude hiding (exponent,significand)
@@ -50,9 +54,9 @@ import Foreign.Ptr (Ptr, plusPtr, castPtr)  -- Used for dealing with Pointers fo
 {-@ embed Int128 * as int @-}
 {-@ embed Int256 * as int @-}
 import Data.Int (Int8,Int16,Int32,Int64)  -- Import standard Int sizes
-import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord) -- Import large Int sizes
+import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord,DoubleWord,BinaryWord) -- Import large Int sizes
 import Data.Word (Word64)
-import Data.Bits (Bits(..), (.|.), shiftL, shift, testBit, (.&.), shiftR)
+import Data.Bits (Bits(..), shiftL, shift, testBit, (.&.), shiftR,FiniteBits)
 
 -- Import Naturals and Rationals
 {-@ embed Natural * as int @-}
@@ -63,26 +67,89 @@ import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can ge
 
 
 -- | The Exponent Size 'ES' kind, the constructor for the Type is a Roman Numeral.
-data ES = Z
-        | I
-        | II
-        | III
-        | IV
-        | V
+data ES = Z_3_2
+        | I_3_2
+        | II_3_2
+        | III_3_2
+        | IV_3_2
+        | V_3_2
+        | Z_2022
+        | I_2022
+        | II_2022
+        | III_2022
+        | IV_2022
+        | V_2022
 
 -- | Type of the Finite Precision Representation, in our case Int8, 
--- Int16, Int32, Int64, Int128, Int256. The 'es' of kind 'ES' will 
--- determine a result of 'r' such that you can determine the 'es' by the
--- 'r'
+-- Int16, Int32, Int64, Int128, Int256.
 {-@ embed IntN * as int @-}
-type family IntN (es :: ES) = r | r -> es
+type family IntN (es :: ES)
   where
-    IntN Z   = Int8
-    IntN I   = Int16
-    IntN II  = Int32
-    IntN III = Int64
-    IntN IV  = Int128
-    IntN V   = Int256
+    IntN Z_3_2   = Int8
+    IntN I_3_2   = Int16
+    IntN II_3_2  = Int32
+    IntN III_3_2 = Int64
+#ifdef O_NO_STORABLE
+    IntN IV_3_2  = Int128
+    IntN V_3_2   = Int256
+#else
+    IntN IV_3_2  = Int128_Storable
+    IntN V_3_2   = Int256_Storable
+#endif
+    IntN Z_2022   = Int8
+    IntN I_2022   = Int16
+    IntN II_2022  = Int32
+    IntN III_2022 = Int64
+#ifdef O_NO_STORABLE
+    IntN IV_2022  = Int128
+    IntN V_2022   = Int256
+#else
+    IntN IV_2022  = Int128_Storable
+    IntN V_2022   = Int256_Storable
+
+-- | New Type Wrappers to resolve Orphan Instance Issue
+newtype Int128_Storable = Int128_Storable Int128
+  deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
+    via Int128
+newtype Int256_Storable = Int256_Storable Int256
+  deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
+    via Int256
+newtype Word128_Storable = Word128_Storable Word128
+  deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
+    via Word128
+#endif
+
+
+-- | Type Max of Kind ES
+type family Max (es :: ES)
+  where
+    Max Z_3_2    = V_3_2
+    Max I_3_2    = V_3_2
+    Max II_3_2   = V_3_2
+    Max III_3_2  = V_3_2
+    Max IV_3_2   = V_3_2
+    Max V_3_2    = V_3_2
+    Max Z_2022   = V_2022
+    Max I_2022   = V_2022
+    Max II_2022  = V_2022
+    Max III_2022 = V_2022
+    Max IV_2022  = V_2022
+    Max V_2022   = V_2022
+
+type family Next (es :: ES)
+  where
+    Next Z_3_2    = I_3_2
+    Next I_3_2    = II_3_2
+    Next II_3_2   = III_3_2
+    Next III_3_2  = IV_3_2
+    Next IV_3_2   = V_3_2
+    Next V_3_2    = V_3_2
+    Next Z_2022   = I_2022
+    Next I_2022   = II_2022
+    Next II_2022  = III_2022
+    Next III_2022 = IV_2022
+    Next IV_2022  = V_2022
+    Next V_2022   = V_2022
 
 -- | The 'FixedWidthInteger' is a Constraint Synonym that contains all
 -- of the constraints provided by the 'IntN' Type Family.  It is a super
@@ -135,8 +202,9 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
       in tupPosit2Posit @es (sgn,regime,exponent,rat)
   
   
-  -- | Exponent Size based on the Posit Exponent kind ES
+  -- | Exponent Size based on the Posit Exponent kind ES, Posit-2022 sets the default to 2.
   exponentSize :: Natural  -- ^ The exponent size, 'es' is a Natural number
+  exponentSize = 2
   
   -- | Various other size definitions used in the Posit format with their default definitions
   nBytes :: Natural  -- ^ 'nBytes' the number of bytes of the Posit Representation
@@ -149,7 +217,7 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   signBitSize = 1
   
   uSeed :: Natural  -- ^ 'uSeed' scaling factor for the regime of the Posit Representation
-  uSeed = 2^(nBytes @es)
+  uSeed = 2^2^(exponentSize @es)
   
   -- | Integer Representation of common bounds
   unReal :: IntN es  -- ^ 'unReal' is something that is not Real, the integer value that is not a Real number
@@ -165,11 +233,11 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   leastNegVal = -1
   
   mostNegVal :: IntN es
-  mostNegVal = negate mostPosVal
+  mostNegVal = negate (mostPosVal @es)
   
   -- Rational Value of common bounds
   maxPosRat :: Rational
-  maxPosRat = 2^((nBytes @es) * ((nBits @es) - 2)) % 1
+  maxPosRat = (fromIntegral (uSeed @es)^(nBits @es - 2)) % 1
   minPosRat :: Rational
   minPosRat = recip (maxPosRat @es)
   maxNegRat :: Rational
@@ -210,7 +278,9 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
     let (regime', offset) = formRegime @es regime  -- offset is the number of binary digits remaining after the regime is formed
         (exponent', offset') = formExponent @es exponent offset  -- offset' is the number of binary digits remaining after the exponent is formed
         fraction = formFraction @es significand offset'
-    in regime' .|. exponent' .|. fraction
+    in regime' + exponent' + fraction  --  Previously bad code...
+    -- Was previously Bitwise OR'd (regime' .|. exponent' .|. fraction), but that failed when an overflow occurs in the fraction:
+    -- (R @V_3_2 (6546781215792283740026379393655198304433284092086129578966582736192267592809066457889108741457440782093636999212155773298525238592782299216095867171579 % 6546781215792283740026379393655198304433284092086129578966582736192267592809349109766540184651808314301773368255120142018434513091770786106657055178752))
   
   formRegime :: Integer -> (IntN es, Integer)
   formRegime power
@@ -306,35 +376,49 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   decimalPrec :: Int
   decimalPrec = fromIntegral $ 2 * (nBytes @es) + 1
   
-  {-# MINIMAL exponentSize #-}
+  {-# MINIMAL exponentSize | nBytes #-}
 
 
 -- =====================================================================
 -- ===                    PositC Instances                           ===
 -- =====================================================================
-
-instance PositC Z where
+-- | Standard 3.2
+instance PositC Z_3_2 where
   exponentSize = 0
 
-
-instance PositC I where
+instance PositC I_3_2 where
   exponentSize = 1
 
-
-instance PositC II where
+instance PositC II_3_2 where
   exponentSize = 2
 
-
-instance PositC III where
+instance PositC III_3_2 where
   exponentSize = 3
 
-
-instance PositC IV where
+instance PositC IV_3_2 where
   exponentSize = 4
 
-
-instance PositC V where
+instance PositC V_3_2 where
   exponentSize = 5
+
+-- | Standard 2022
+instance PositC Z_2022 where
+  nBytes = 2^0
+
+instance PositC I_2022 where
+  nBytes = 2^1
+
+instance PositC II_2022 where
+  nBytes = 2^2
+
+instance PositC III_2022 where
+  nBytes = 2^3
+
+instance PositC IV_2022 where
+  nBytes = 2^4
+
+instance PositC V_2022 where
+  nBytes = 2^5
 
 
 
@@ -372,14 +456,13 @@ xnor :: Bool -> Bool -> Bool
 xnor a b = not $ (a || b) && not (b && a)
 
 
-#ifndef O_NO_ORPHANS
 #ifndef O_NO_STORABLE
 -- =====================================================================
 -- ===                  Storable Instances                           ===
 -- =====================================================================
 --
--- Orphan Instance for Word128 using the DoubleWord type class
-instance Storable Word128 where
+-- Storable Instance for Word128 using the DoubleWord type class and Word128_Storable newtype
+instance Storable Word128_Storable where
   sizeOf _ = 16
   alignment _ = 16
   peek ptr = do
@@ -394,8 +477,8 @@ instance Storable Word128 where
       where
         offsetWord i = (castPtr ptr :: Ptr Word64) `plusPtr` (i*8)
 
--- Orphan Instance for Int128 using the DoubleWord type class
-instance Storable Int128 where
+-- Storable Instance for Int128 using the DoubleWord type class and Int128_Storable newtype
+instance Storable Int128_Storable where
   sizeOf _ = 16
   alignment _ = 16
   peek ptr = do
@@ -412,23 +495,23 @@ instance Storable Int128 where
         offsetInt i = (castPtr ptr :: Ptr Int64) `plusPtr` (i*8)
         offsetWord i = (castPtr ptr :: Ptr Word64) `plusPtr` (i*8)
 
--- Orphan Instance for Int256 using the DoubleWord type class
-instance Storable Int256 where
+-- Storable Instance for Int256 using the DoubleWord type class and Int256_Storable newtype
+instance Storable Int256_Storable where
   sizeOf _ = 32
   alignment _ = 32
   peek ptr = do
-    hi <- peek $ offsetInt 0
-    lo <- peek $ offsetWord 1
+    (Int128_Storable hi) <- peek $ offsetInt 0
+    (Word128_Storable lo) <- peek $ offsetWord 1
     return $ fromHiAndLo hi lo
       where
-        offsetInt i = (castPtr ptr :: Ptr Int128) `plusPtr` (i*16)
-        offsetWord i = (castPtr ptr :: Ptr Word128) `plusPtr` (i*16)
+        offsetInt i = (castPtr ptr :: Ptr Int128_Storable) `plusPtr` (i*16)
+        offsetWord i = (castPtr ptr :: Ptr Word128_Storable) `plusPtr` (i*16)
   poke ptr int = do
-    poke (offsetInt 0) (hiWord int)
-    poke (offsetWord 1) (loWord int)
+    poke (offsetInt 0) (Int128_Storable $ hiWord int)
+    poke (offsetWord 1) (Word128_Storable $ loWord int)
       where
-        offsetInt i = (castPtr ptr :: Ptr Int128) `plusPtr` (i*16)
-        offsetWord i = (castPtr ptr :: Ptr Word128) `plusPtr` (i*16)
+        offsetInt i = (castPtr ptr :: Ptr Int128_Storable) `plusPtr` (i*16)
+        offsetWord i = (castPtr ptr :: Ptr Word128_Storable) `plusPtr` (i*16)
 --
 #endif
-#endif
+
