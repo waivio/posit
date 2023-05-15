@@ -1,5 +1,10 @@
 # Changelog for Posit Numbers
 
+# posit-2022.0.0.1
+
+  * Added `PositF` constraint synonym to simplify the usage of `(PositC es, PositC (Next es))`, as is needed for `Floating` instances
+  * More coverage in the test suite for multiple types
+
 # posit-2022
 
   * Added Types (P8, P16, P32, P64, P128, P256) for the Posit Standard 2022 encoding, exponent size = 2, and with nBytes = 2^es

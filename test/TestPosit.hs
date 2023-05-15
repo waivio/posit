@@ -28,6 +28,16 @@ main = do
   print $ "bitwise OR causes problem when fraction overflows P256: should be close to 1.0 not 0.5  ==>  " ++ show (R @V_2022 (6546781215792283740026379393655198304433284092086129578966582736192267592809066457889108741457440782093636999212155773298525238592782299216095867171579 % 6546781215792283740026379393655198304433284092086129578966582736192267592809349109766540184651808314301773368255120142018434513091770786106657055178752))
   print $ "exp(1)**(pi*sqrt 43) :: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 43)) -- 
   print $ "exp(1)**(pi*sqrt 43) :: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: Posit128 " ++ show (exp(1 :: Posit128) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: P128 " ++ show (exp(1 :: P128) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: Posit64 " ++ show (exp(1 :: Posit64) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: P64 " ++ show (exp(1 :: P64) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: Posit32 " ++ show (exp(1 :: Posit32) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: P32 " ++ show (exp(1 :: P32) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: Posit16 " ++ show (exp(1 :: Posit16) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: P16 " ++ show (exp(1 :: P16) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: Posit8 " ++ show (exp(1 :: Posit8) ** (pi * sqrt 43)) -- 
+  print $ "exp(1)**(pi*sqrt 43) :: P8 " ++ show (exp(1 :: P8) ** (pi * sqrt 43)) -- 
   print $ "exp(1)**(pi*sqrt 67) :: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 67)) -- 
   print $ "exp(1)**(pi*sqrt 67) :: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 67)) -- 
   print $ "exp(1)**(pi*sqrt 163):: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 163)) --
@@ -121,20 +131,80 @@ main = do
   eval "Wolfram Alpha: phi**pi:" truth truth
   let tPiPosit256 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit256
   let tPiP256 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P256
+  let tPiPosit128 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit128
+  let tPiP128 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P128
+  let tPiPosit64 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit64
+  let tPiP64 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P64
+  let tPiPosit32 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit32
+  let tPiP32 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P32
+  let tPiPosit16 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit16
+  let tPiP16 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P16
+  let tPiPosit8 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit8
+  let tPiP8 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P8
   eval "Standard pi :: Posit256" pi tPiPosit256
   eval "Standard pi :: P256" pi tPiP256
   eval "Gauss–Legendre algorithm: pi :: Posit256" funPi1 tPiPosit256
   eval "Gauss–Legendre algorithm: pi :: P256" funPi1 tPiP256
   eval "Borwein's Quintic algorithm: pi :: Posit256" funPi2 tPiPosit256
   eval "Borwein's Quintic algorithm: pi :: P256" funPi2 tPiP256
+  eval "Borwein's Quintic algorithm: pi :: Posit128" funPi2 tPiPosit128
+  eval "Borwein's Quintic algorithm: pi :: P128" funPi2 tPiP128
+  eval "Borwein's Quintic algorithm: pi :: Posit64" funPi2 tPiPosit64
+  eval "Borwein's Quintic algorithm: pi :: P64" funPi2 tPiP64
+  eval "Borwein's Quintic algorithm: pi :: Posit32" funPi2 tPiPosit32
+  eval "Borwein's Quintic algorithm: pi :: P32" funPi2 tPiP32
+  eval "Borwein's Quintic algorithm: pi :: Posit16" funPi2 tPiPosit16
+  eval "Borwein's Quintic algorithm: pi :: P16" funPi2 tPiP16
+  eval "Borwein's Quintic algorithm: pi :: Posit8" funPi2 tPiPosit8
+  eval "Borwein's Quintic algorithm: pi :: P8" funPi2 tPiP8
   eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit256" funPi3 tPiPosit256
   eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P256" funPi3 tPiP256
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit128" funPi3 tPiPosit128
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P128" funPi3 tPiP128
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit64" funPi3 tPiPosit64
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P64" funPi3 tPiP64
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit32" funPi3 tPiPosit32
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P32" funPi3 tPiP32
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit16" funPi3 tPiPosit16
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P16" funPi3 tPiP16
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: Posit8" funPi3 tPiPosit8
+  eval "Bailey–Borwein–Plouffe (BBP) formula: pi :: P8" funPi3 tPiP8
   eval "Fabrice Bellard improvement on the BBP: pi :: Posit256" funPi4 tPiPosit256
   eval "Fabrice Bellard improvement on the BBP: pi :: P256" funPi4 tPiP256
+  eval "Fabrice Bellard improvement on the BBP: pi :: Posit128" funPi4 tPiPosit128
+  eval "Fabrice Bellard improvement on the BBP: pi :: P128" funPi4 tPiP128
+  eval "Fabrice Bellard improvement on the BBP: pi :: Posit64" funPi4 tPiPosit64
+  eval "Fabrice Bellard improvement on the BBP: pi :: P64" funPi4 tPiP64
+  eval "Fabrice Bellard improvement on the BBP: pi :: Posit32" funPi4 tPiPosit32
+  eval "Fabrice Bellard improvement on the BBP: pi :: P32" funPi4 tPiP32
+  eval "Fabrice Bellard improvement on the BBP: pi :: Posit16" funPi4 tPiPosit16
+  eval "Fabrice Bellard improvement on the BBP: pi :: P16" funPi4 tPiP16
+  eval "Fabrice Bellard improvement on the BBP: pi :: Posit8" funPi4 tPiPosit8
+  eval "Fabrice Bellard improvement on the BBP: pi :: P8" funPi4 tPiP8
   eval "Borwein's Quadradic 1985 formula: pi :: Posit256" funPi5 tPiPosit256
   eval "Borwein's Quadradic 1985 formula: pi :: P256" funPi5 tPiP256
+  eval "Borwein's Quadradic 1985 formula: pi :: Posit125" funPi5 tPiPosit128
+  eval "Borwein's Quadradic 1985 formula: pi :: P128" funPi5 tPiP128
+  eval "Borwein's Quadradic 1985 formula: pi :: Posit64" funPi5 tPiPosit64
+  eval "Borwein's Quadradic 1985 formula: pi :: P64" funPi5 tPiP64
+  eval "Borwein's Quadradic 1985 formula: pi :: Posit32" funPi5 tPiPosit32
+  eval "Borwein's Quadradic 1985 formula: pi :: P32" funPi5 tPiP32
+  eval "Borwein's Quadradic 1985 formula: pi :: Posit16" funPi5 tPiPosit16
+  eval "Borwein's Quadradic 1985 formula: pi :: P16" funPi5 tPiP16
+  eval "Borwein's Quadradic 1985 formula: pi :: Posit8" funPi5 tPiPosit8
+  eval "Borwein's Quadradic 1985 formula: pi :: P8" funPi5 tPiP8
   eval "Borwein Cubic: pi :: Posit256" funPi6 tPiPosit256
   eval "Borwein Cubic: pi :: P256" funPi6 tPiP256
+  eval "Borwein Cubic: pi :: Posit128" funPi6 tPiPosit128
+  eval "Borwein Cubic: pi :: P128" funPi6 tPiP128
+  eval "Borwein Cubic: pi :: Posit64" funPi6 tPiPosit64
+  eval "Borwein Cubic: pi :: P64" funPi6 tPiP64
+  eval "Borwein Cubic: pi :: Posit32" funPi6 tPiPosit32
+  eval "Borwein Cubic: pi :: P32" funPi6 tPiP32
+  eval "Borwein Cubic: pi :: Posit16" funPi6 tPiPosit16
+  eval "Borwein Cubic: pi :: P16" funPi6 tPiP16
+  eval "Borwein Cubic: pi :: Posit8" funPi6 tPiPosit8
+  eval "Borwein Cubic: pi :: P8" funPi6 tPiP8
   eval "Wolfram Alpha: pi :: Posit256" tPiPosit256 tPiPosit256
   eval "Wolfram Alpha: pi :: P256" tPiP256 tPiP256
 --

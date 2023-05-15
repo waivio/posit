@@ -620,7 +620,7 @@ instance (Floating (Posit es), PositC es) => RealFloat (Posit es) where
 -- ===                         Floating                              ===
 -- =====================================================================
 
-instance (PositC es, PositC (Next es)) => Floating (Posit es) where
+instance PositF es => Floating (Posit es) where
   pi = approx_pi
   exp = hiRezNext approx_exp
   log = hiRezNext approx_log
@@ -641,13 +641,13 @@ instance (PositC es, PositC (Next es)) => Floating (Posit es) where
 -- Functions to step up and down in Resolution of the trancendental
 -- functions so that we get properly rounded results upto 128-bits
 -- Note: 256-bit resolution will not have ulp accuracy
-hiRezNext :: forall es. (PositC es, PositC (Next es)) => (Posit (Next es) -> Posit (Next es)) -> Posit es -> Posit es
+hiRezNext :: forall es. PositF es => (Posit (Next es) -> Posit (Next es)) -> Posit es -> Posit es
 hiRezNext f x = convert (f (convert x) :: Posit (Next es)) :: Posit es
 
 hiRezMax :: forall es. (PositC es, PositC (Max es)) => (Posit (Max es) -> Posit (Max es)) -> Posit es -> Posit es
 hiRezMax f x = convert (f (convert x) :: Posit (Max es)) :: Posit es
 
-hiRezNext2 :: forall es. (PositC es, PositC (Next es)) => (Posit (Next es) -> Posit (Next es) -> Posit (Next es)) -> Posit es -> Posit es -> Posit es
+hiRezNext2 :: forall es. PositF es => (Posit (Next es) -> Posit (Next es) -> Posit (Next es)) -> Posit es -> Posit es -> Posit es
 hiRezNext2 f x y = convert (f (convert x :: Posit (Next es)) (convert y :: Posit (Next es)) ) :: Posit es
 
 hiRezMax2 :: forall es. (PositC es, PositC (Max es)) => (Posit (Max es) -> Posit (Max es) -> Posit (Max es)) -> Posit es -> Posit es -> Posit es
