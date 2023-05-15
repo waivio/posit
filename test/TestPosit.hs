@@ -40,8 +40,29 @@ main = do
   print $ "exp(1)**(pi*sqrt 43) :: P8 " ++ show (exp(1 :: P8) ** (pi * sqrt 43)) -- 
   print $ "exp(1)**(pi*sqrt 67) :: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 67)) -- 
   print $ "exp(1)**(pi*sqrt 67) :: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: Posit128 " ++ show (exp(1 :: Posit128) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: P128 " ++ show (exp(1 :: P128) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: Posit64 " ++ show (exp(1 :: Posit64) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: P64 " ++ show (exp(1 :: P64) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: Posit32 " ++ show (exp(1 :: Posit32) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: P32 " ++ show (exp(1 :: P32) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: Posit16 " ++ show (exp(1 :: Posit16) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: P16 " ++ show (exp(1 :: P16) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: Posit8 " ++ show (exp(1 :: Posit8) ** (pi * sqrt 67)) -- 
+  print $ "exp(1)**(pi*sqrt 67) :: P8 " ++ show (exp(1 :: P8) ** (pi * sqrt 67)) -- 
   print $ "exp(1)**(pi*sqrt 163):: Posit256 " ++ show (exp(1 :: Posit256) ** (pi * sqrt 163)) --
   print $ "exp(1)**(pi*sqrt 163):: P256 " ++ show (exp(1 :: P256) ** (pi * sqrt 163)) --
+  print $ "exp(1)**(pi*sqrt 163) :: Posit128 " ++ show (exp(1 :: Posit128) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: P128 " ++ show (exp(1 :: P128) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: Posit64 " ++ show (exp(1 :: Posit64) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: P64 " ++ show (exp(1 :: P64) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: Posit32 " ++ show (exp(1 :: Posit32) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: P32 " ++ show (exp(1 :: P32) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: Posit16 " ++ show (exp(1 :: Posit16) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: P16 " ++ show (exp(1 :: P16) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: Posit8 " ++ show (exp(1 :: Posit8) ** (pi * sqrt 163)) -- 
+  print $ "exp(1)**(pi*sqrt 163) :: P8 " ++ show (exp(1 :: P8) ** (pi * sqrt 163)) -- 
+  print $ "Inverse Posit Density Function: :: Posit256 , hmmm well If I could have a function to convert from different distribution funcitons"
 -- | 'EPS'
   print $ "Machine epsilon Posit8 ~1.0: " ++ show (eps :: Posit8) -- succ (Posit int) = Posit (succ int)
   print $ "Machine epsilon Posit16 ~1.0: " ++ show (eps :: Posit16) -- 
