@@ -304,7 +304,8 @@ funPi2 = recip $ go 0 0 0 0.5 (5 / phi^3)
     go !prevA !prevS !n !a !s
       | prevA == a = a
       | prevS == s = a
-      | abs (prevA - a) < eps = a  -- P256 will not reach a fixed point where `prevA == a` it sort of oscelates until divergence occurs, if we test for less than eps it can stop early
+      | abs (prevA - a) <= 2*eps = a  -- P256 or Posit128, will not reach a fixed point where `prevA == a` it sort of oscelates until divergence occurs, if we test for less than 2*eps it can stop early
+      | abs (prevS - s) <= 2*eps = a
       | otherwise =
         let x = 5 / s - 1
             y = (x - 1)^2 + 7

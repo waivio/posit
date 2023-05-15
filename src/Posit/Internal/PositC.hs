@@ -38,6 +38,7 @@
 module Posit.Internal.PositC
 (PositC(..),
  ES(..),
+ PositF(),
  IntN,
  FixedWidthInteger(),
  Max,
@@ -420,6 +421,8 @@ instance PositC IV_2022 where
 instance PositC V_2022 where
   nBytes = 2^5
 
+-- | `PositF` Constraint Synonym for things that need both the word size and the next higher word size
+type PositF es = (PositC es, PositC (Next es))
 
 
 -- =====================================================================
