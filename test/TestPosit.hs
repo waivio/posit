@@ -62,7 +62,6 @@ main = do
   print $ "exp(1)**(pi*sqrt 163) :: P16 " ++ show (exp(1 :: P16) ** (pi * sqrt 163)) -- 
   print $ "exp(1)**(pi*sqrt 163) :: Posit8 " ++ show (exp(1 :: Posit8) ** (pi * sqrt 163)) -- 
   print $ "exp(1)**(pi*sqrt 163) :: P8 " ++ show (exp(1 :: P8) ** (pi * sqrt 163)) -- 
-  print $ "Inverse Posit Density Function: :: Posit256 , hmmm well If I could have a function to convert from different distribution funcitons"
 -- | 'EPS'
   print $ "Machine epsilon Posit8 ~1.0: " ++ show (eps :: Posit8) -- succ (Posit int) = Posit (succ int)
   print $ "Machine epsilon Posit16 ~1.0: " ++ show (eps :: Posit16) -- 

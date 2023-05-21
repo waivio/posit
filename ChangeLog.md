@@ -1,5 +1,13 @@
 # Changelog for Posit Numbers
 
+# posit-2022.0.1.0
+
+  * Added Random and Uniform Instances
+  * `Uniform` provides a uniform distribution over all possible posits, sampling the entire projective real line
+  * `Random` provides a uniform distribution between 0 and 1, sampling the real numbers in that range
+  * Example: take 10 (randomRs (1,100) (mkStdGen 2023)) :: [Posit64]
+  * Added `hypot2`, `hypot3`, `hypot4`, to the `AltFloating` class
+
 # posit-2022.0.0.1
 
   * Added `PositF` constraint synonym to simplify the usage of `(PositC es, PositC (Next es))`, as is needed for `Floating` instances
