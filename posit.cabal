@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
 name:           posit
-version:        2022.0.0.1
+version:        2022.0.1.0
 description:    The Posit Number format attempting to conform to the Posit Standard Versions 3.2 and 2022.  Where Real numbers are approximated by `Maybe Rational` and sampled in a similar way to the projective real line.
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues
 author:         Nathan Waivio
 maintainer:     nathan.waivio@gmail.com
-copyright:      2021-2022 Nathan Waivio
+copyright:      2021-2023 Nathan Waivio
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -26,8 +26,8 @@ source-repository head
   type: git
   location: https://github.com/waivio/posit
 
-flag do-no-storable
-  description: Build without Storable Class support
+flag do-no-storable-random
+  description: Build without Storable or Random/Uniform Class support
   manual:      True
   default:     False
 
@@ -54,11 +54,11 @@ library
   if flag(do-liquid)
     ghc-options: -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--fast -fplugin-opt=LiquidHaskell:--no-termination -fplugin-opt=LiquidHaskell:--max-case-expand=4 -fplugin-opt=LiquidHaskell:--short-names
  
-  if flag(do-no-storable)
-    cpp-options: -DO_NO_STORABLE
+  if flag(do-no-storable-random)
+    cpp-options: -DO_NO_STORABLE_RANDOM
  
   if flag(do-liquid)
-    cpp-options: -DO_LIQUID -DO_NO_STORABLE
+    cpp-options: -DO_LIQUID -DO_NO_STORABLE_RANDOM
  
  
   -- Other library packages from which modules are imported.
@@ -68,6 +68,10 @@ library
   if !flag(do-liquid)
     build-depends:
       base >=4.7 && <5
+ 
+  if !flag(do-no-storable-random)
+    build-depends:
+      random
  
   if flag(do-liquid)
     build-depends:

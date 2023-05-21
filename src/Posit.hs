@@ -32,7 +32,7 @@
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}  --   Turn off noise
 {-# OPTIONS_GHC -Wno-type-defaults #-}  --   Turn off noise
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}  --   Turn off noise
-
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- ----
 --  Posit numbers implementing:
@@ -123,10 +123,17 @@ import Text.Read (Lexeme(Ident)
 -- Imports for Vectorization Class Instances
 import Data.Foldable (toList)  -- Used for fused operations on foldable/lists
 
+#ifndef O_NO_STORABLE_RANDOM
 -- Imports for Storable Instance
 import Foreign.Storable (Storable, sizeOf, alignment, peek, poke)  -- Used for Storable Instances of Posit
 import Foreign.Ptr (Ptr, castPtr)  -- Used for dealing with Pointers for the Posit Storable Instance
 
+
+import System.Random (Random(random,randomR))
+import System.Random.Stateful (Uniform, uniform, uniformM)
+
+import Data.Bits (shiftL, (.&.), (.|.))
+#endif
 
 -- would like to:
 -- import Posit.Internal.ElementaryFunctions
@@ -532,11 +539,11 @@ instance PositC es => Read (Posit es) where
 #endif
 
 
+#ifndef O_NO_STORABLE_RANDOM
 -- =====================================================================
 -- ===                  Storable Instances                           ===
 -- =====================================================================
 --
-#ifndef O_NO_STORABLE
 --
 instance PositC es => Storable (Posit es) where
   sizeOf _ = fromIntegral $ nBytes @es
@@ -547,8 +554,43 @@ instance PositC es => Storable (Posit es) where
   poke ptr (Posit int) = do
     poke (castPtr ptr :: Ptr (IntN es)) int
 --
-#endif
 
+-- | Random instance for the Posit Sampling of R [0,1), this is for the
+-- real numbers, not on the projective real numbers, for projective
+-- real numbers, use Uniform.
+instance forall es. PositC es => Random (Posit es) where
+-- First we take a uniform distributed random posit, then we mask out
+-- the sign, 2 bits of regime, and the exponent, then we write in the
+-- sign, regime and exponent of 1.0, to get a posit [1,2) then subtract
+-- 1.0 to adjust the range to [0,1).  This approach is credited to a
+-- coorispondance between Shin Yee Chung and John L. Gustafson titled:
+-- "random number generators for posit" in the Unum Computing Google Group
+  random g = case uniform g of
+               (Posit int :: Posit es, g') -> (Posit ((int .&. maskFraction @es) .|. patt) - 1.0, g')
+    where
+     (Posit patt) = 1.0 :: Posit es
+
+  randomR (lo,hi) g
+    | lo > hi = randomR (hi,lo) g
+    | otherwise = case random g of
+                    (p,g') -> let scaled_p = (hi - lo) * p + lo
+                              in (scaled_p, g')
+
+
+-- | Uniform instance for the Posit Sampling of the projective real line
+instance PositC es => Uniform (Posit es) where
+  uniformM g = do
+    int <- uniformM g
+    return $ Posit int
+
+
+maskFraction :: forall es. PositC es => IntN es
+maskFraction =
+  let twoRegimeBits = 2 -- regimeBitSize set to 2, the good range is [1,2)
+      sreSize = signBitSize @es + twoRegimeBits + exponentSize @es
+  in (1 `shiftL` fromIntegral (nBits @es - sreSize) - 1)
+
+#endif
 
 -- =====================================================================
 -- ===                        Real Frac                              ===
@@ -926,9 +968,12 @@ class AltFloating p where
   gamma :: p -> p
   sinc :: p -> p
   expm1 :: p -> p
+  hypot2 :: p -> p -> p
+  hypot3 :: p -> p -> p -> p
+  hypot4 :: p -> p -> p -> p -> p
 
 --
-instance PositC es => AltFloating (Posit es) where
+instance PositF es => AltFloating (Posit es) where
   phi = 1.6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374847540880753868917521266338   -- approx_phi 1.6
   eps = succ 1.0 - 1.0
   gamma = approx_gamma
@@ -936,6 +981,18 @@ instance PositC es => AltFloating (Posit es) where
   expm1 x =
     let b = approx_atanh $ x / 2
     in (2 * b) / (1 - b)
+  hypot2 a b = let a' :: Posit (Next es) = convert a
+                   b' :: Posit (Next es) = convert b
+               in convert (approx_sqrt $ a'^2 + b'^2) :: Posit es
+  hypot3 a b c = let a' :: Posit (Next es) = convert a
+                     b' :: Posit (Next es) = convert b
+                     c' :: Posit (Next es) = convert c
+                 in convert (approx_sqrt $ fsum3 (a'^2) (b'^2) (c'^2)) :: Posit es
+  hypot4 a b c d = let a' :: Posit (Next es) = convert a
+                       b' :: Posit (Next es) = convert b
+                       c' :: Posit (Next es) = convert c
+                       d' :: Posit (Next es) = convert d
+                   in convert (approx_sqrt $ fsum4 (a'^2) (b'^2) (c'^2) (d'^2)) :: Posit es
 
 
 

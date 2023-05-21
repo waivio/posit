@@ -1,4 +1,4 @@
-# posit 2022.0.0.1
+# posit 2022.0.1.0
 
 The [Posit Standard 2022](https://posithub.org/docs/posit_standard-2.pdf),
 and [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf), 
@@ -21,6 +21,8 @@ the following standard classes:
  * AltShow
  * Read
  * Storable  -- Formats for binary data, for computation and data interchange
+ * Random
+ * Uniform
  * RealFrac
  * RealFloat
  * Floating  -- Mathematical functions such as logarithm, exponential, trigonometric, and hyperbolic functions. Warning! May induce trance.
@@ -54,6 +56,9 @@ class AltFloating p where
   gamma :: p -> p
   sinc :: p -> p
   expm1 :: p -> p
+  hypot2 :: p -> p -> p
+  hypot3 :: p -> p -> p -> p
+  hypot4 :: p -> p -> p -> p -> p
 ```
 
 ```

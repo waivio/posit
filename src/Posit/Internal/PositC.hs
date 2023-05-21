@@ -47,9 +47,13 @@ module Posit.Internal.PositC
 
 import Prelude hiding (exponent,significand)
 
+#ifndef O_NO_STORABLE_RANDOM
 -- Imports for Storable Instance of Data.DoubleWord
 import Foreign.Storable (Storable, sizeOf, alignment, peek, poke)  -- Used for Storable Instances of Data.DoubleWord
 import Foreign.Ptr (Ptr, plusPtr, castPtr)  -- Used for dealing with Pointers for the Data.DoubleWord Storable Instance
+
+import System.Random.Stateful (Uniform, uniformM)
+#endif
 
 -- Machine Integers and Operations
 {-@ embed Int128 * as int @-}
@@ -58,6 +62,7 @@ import Data.Int (Int8,Int16,Int32,Int64)  -- Import standard Int sizes
 import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord,DoubleWord,BinaryWord) -- Import large Int sizes
 import Data.Word (Word64)
 import Data.Bits (Bits(..), shiftL, shift, testBit, (.&.), shiftR,FiniteBits)
+
 
 -- Import Naturals and Rationals
 {-@ embed Natural * as int @-}
@@ -90,36 +95,35 @@ type family IntN (es :: ES)
     IntN I_3_2   = Int16
     IntN II_3_2  = Int32
     IntN III_3_2 = Int64
-#ifdef O_NO_STORABLE
+#ifdef O_NO_STORABLE_RANDOM
     IntN IV_3_2  = Int128
     IntN V_3_2   = Int256
 #else
-    IntN IV_3_2  = Int128_Storable
-    IntN V_3_2   = Int256_Storable
+    IntN IV_3_2  = Int128_Storable_Random
+    IntN V_3_2   = Int256_Storable_Random
 #endif
     IntN Z_2022   = Int8
     IntN I_2022   = Int16
     IntN II_2022  = Int32
     IntN III_2022 = Int64
-#ifdef O_NO_STORABLE
+#ifdef O_NO_STORABLE_RANDOM
     IntN IV_2022  = Int128
     IntN V_2022   = Int256
 #else
-    IntN IV_2022  = Int128_Storable
-    IntN V_2022   = Int256_Storable
+    IntN IV_2022  = Int128_Storable_Random
+    IntN V_2022   = Int256_Storable_Random
 
 -- | New Type Wrappers to resolve Orphan Instance Issue
-newtype Int128_Storable = Int128_Storable Int128
+newtype Int128_Storable_Random = Int128_Storable_Random Int128
   deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
     via Int128
-newtype Int256_Storable = Int256_Storable Int256
+newtype Int256_Storable_Random = Int256_Storable_Random Int256
   deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
     via Int256
-newtype Word128_Storable = Word128_Storable Word128
+newtype Word128_Storable_Random = Word128_Storable_Random Word128
   deriving (Bits,Bounded,Enum,Real,Integral,Eq,Ord,Num,Read,Show,DoubleWord,BinaryWord,FiniteBits)
     via Word128
 #endif
-
 
 -- | Type Max of Kind ES
 type family Max (es :: ES)
@@ -165,8 +169,9 @@ type FixedWidthInteger a =
   ,Num a
   ,Read a
   ,Show a
-#ifndef O_NO_STORABLE
+#ifndef O_NO_STORABLE_RANDOM
   ,Storable a
+  ,Uniform a
 #endif
   )
 
@@ -459,13 +464,13 @@ xnor :: Bool -> Bool -> Bool
 xnor a b = not $ (a || b) && not (b && a)
 
 
-#ifndef O_NO_STORABLE
+#ifndef O_NO_STORABLE_RANDOM
 -- =====================================================================
 -- ===                  Storable Instances                           ===
 -- =====================================================================
 --
 -- Storable Instance for Word128 using the DoubleWord type class and Word128_Storable newtype
-instance Storable Word128_Storable where
+instance Storable Word128_Storable_Random where
   sizeOf _ = 16
   alignment _ = 16
   peek ptr = do
@@ -481,7 +486,7 @@ instance Storable Word128_Storable where
         offsetWord i = (castPtr ptr :: Ptr Word64) `plusPtr` (i*8)
 
 -- Storable Instance for Int128 using the DoubleWord type class and Int128_Storable newtype
-instance Storable Int128_Storable where
+instance Storable Int128_Storable_Random where
   sizeOf _ = 16
   alignment _ = 16
   peek ptr = do
@@ -499,22 +504,47 @@ instance Storable Int128_Storable where
         offsetWord i = (castPtr ptr :: Ptr Word64) `plusPtr` (i*8)
 
 -- Storable Instance for Int256 using the DoubleWord type class and Int256_Storable newtype
-instance Storable Int256_Storable where
+instance Storable Int256_Storable_Random where
   sizeOf _ = 32
   alignment _ = 32
   peek ptr = do
-    (Int128_Storable hi) <- peek $ offsetInt 0
-    (Word128_Storable lo) <- peek $ offsetWord 1
+    (Int128_Storable_Random hi) <- peek $ offsetInt 0
+    (Word128_Storable_Random lo) <- peek $ offsetWord 1
     return $ fromHiAndLo hi lo
       where
-        offsetInt i = (castPtr ptr :: Ptr Int128_Storable) `plusPtr` (i*16)
-        offsetWord i = (castPtr ptr :: Ptr Word128_Storable) `plusPtr` (i*16)
+        offsetInt i = (castPtr ptr :: Ptr Int128_Storable_Random) `plusPtr` (i*16)
+        offsetWord i = (castPtr ptr :: Ptr Word128_Storable_Random) `plusPtr` (i*16)
   poke ptr int = do
-    poke (offsetInt 0) (Int128_Storable $ hiWord int)
-    poke (offsetWord 1) (Word128_Storable $ loWord int)
+    poke (offsetInt 0) (Int128_Storable_Random $ hiWord int)
+    poke (offsetWord 1) (Word128_Storable_Random $ loWord int)
       where
-        offsetInt i = (castPtr ptr :: Ptr Int128_Storable) `plusPtr` (i*16)
-        offsetWord i = (castPtr ptr :: Ptr Word128_Storable) `plusPtr` (i*16)
+        offsetInt i = (castPtr ptr :: Ptr Int128_Storable_Random) `plusPtr` (i*16)
+        offsetWord i = (castPtr ptr :: Ptr Word128_Storable_Random) `plusPtr` (i*16)
 --
+
+-- =====================================================================
+-- ===                  Random   Instances                           ===
+-- =====================================================================
+--
+-- Uniform Instance for Word128 using the Double Word type class and Word128_Storable newtype
+instance Uniform Word128_Storable_Random where
+  uniformM g = do
+    hi <- uniformM g
+    lo <- uniformM g
+    return $ fromHiAndLo hi lo
+
+-- Uniform Instance for Int128 using the Double Word type class and Int128_Storable newtype
+instance Uniform Int128_Storable_Random where
+  uniformM g = do
+    hi <- uniformM g
+    lo <- uniformM g
+    return $ fromHiAndLo hi lo
+
+-- Uniform Instance for Int256 using the Double Word type class and Int256_Storable newtype
+instance Uniform Int256_Storable_Random where
+  uniformM g = do
+    Int128_Storable_Random hi <- uniformM g
+    Word128_Storable_Random lo <- uniformM g
+    return $ fromHiAndLo hi lo
 #endif
 
