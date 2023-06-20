@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           posit
-version:        2022.0.1.0
+version:        2022.0.1.1
 description:    The Posit Number format attempting to conform to the Posit Standard Versions 3.2 and 2022.  Where Real numbers are approximated by `Maybe Rational` and sampled in a similar way to the projective real line.
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues
@@ -90,6 +90,19 @@ test-suite posit-test
   build-depends:
     base >=4.7 && <5,
     posit
+  default-language: Haskell2010
+
+test-suite test-posit-functions
+  type: exitcode-stdio-1.0
+  main-is: TestElementaryFunctions.hs
+  hs-source-dirs:
+      test
+  ghc-options: -O2  -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+    base >= 4.7 && < 5,
+    posit >= 2022.0.1,
+    Chart,
+    Chart-cairo
   default-language: Haskell2010
 
 -- Weigh based benchmark for Vector

@@ -704,8 +704,20 @@ approx_pi :: PositC es => Posit es
 approx_pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446
 
 
-approx_exp :: PositC es => Posit es -> Posit es     -- Comment by Abigale Emily:  xcddfffff
-approx_exp x = approx_2exp taylor_approx_exp (x / lnOf2)
+-- euler's constant
+approx_e :: PositC es => Posit es
+approx_e  = 2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274274663919320030599218174135
+
+
+approx_exp :: forall es. PositC es => Posit es -> Posit es     -- Comment by Abigale Emily:  xcddfffff
+approx_exp (R bx) = fromIntegral (uSeed @es)^^m * (taylor_approx_expm1 (R c * log_USeed) + 1)
+  where
+    (m,c) = properFraction $ bx / luS
+    R luS = log_USeed @es
+
+
+log_USeed :: forall es. PositC es => Posit es
+log_USeed = approx_log $ fromIntegral (uSeed @es)
 
 
 approx_log :: PositC es => Posit es -> Posit es
@@ -732,13 +744,19 @@ approx_pow x y
 approx_sin :: forall es. PositC es => Posit es -> Posit es
 approx_sin  NaR = NaR
 approx_sin 0 = 0
-approx_sin x = normalizedSine $ x / (2*approx_pi)
+approx_sin (R x) = normalizedSine (R x')
+  where
+    (_, x') = properFraction $ x / twoPi
+    R twoPi :: Posit es = 2 * approx_pi
 
 
-approx_cos :: PositC es => Posit es -> Posit es
+approx_cos :: forall es. PositC es => Posit es -> Posit es
 approx_cos NaR = NaR
 approx_cos 0 = 1
-approx_cos x = normalizedCosine $ x / (2*approx_pi)
+approx_cos (R x) = normalizedCosine (R x')
+  where
+    (_, x') = properFraction $ x / twoPi
+    R twoPi :: Posit es = 2 * approx_pi
 
 
 approx_asin :: PositC es => Posit es -> Posit es
@@ -854,17 +872,6 @@ normalizedCosine x
   | otherwise = tuma_approx_cos $ 2*approx_pi * x --
 
 
--- Approximation of 2^x Domain Reduction
-approx_2exp :: PositC es => (Posit es -> Posit es) -> Posit es -> Posit es
-approx_2exp _ NaR = NaR
-approx_2exp _ 0 = 1
-approx_2exp f x
-  | x < 0 = recip.approx_2exp f.negate $ x  -- always calculate the positive method
-  | otherwise = case properFraction x of
-                  (int,rem) -> fromIntegral (2^int) * f (lnOf2 * rem)
-
-
-
 
 -- Using the CORDIC domain reduction and some approximation function of log
 funLogDomainReduction :: forall es. PositC es => (Posit es -> Posit es) -> Posit es -> Posit es
@@ -894,7 +901,6 @@ funLogTaylor x
         | otherwise = go (k + 1) (acc + term k)
       term :: Natural -> Posit es
       term k = (-1)^(k+1) * (x - 1)^k / fromIntegral k
-     
 
 
 
@@ -915,20 +921,15 @@ taylor_approx_atan x = go 0 0
 --
 
 
--- calculate exp, its most accurate near zero
--- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
-taylor_approx_exp :: forall es. PositC es => Posit es -> Posit es
-taylor_approx_exp NaR = NaR
-taylor_approx_exp 0 = 1
-taylor_approx_exp z = go 0 0
+
+-- exp x - 1, has a decent Taylor Series
+taylor_approx_expm1 :: forall es. PositC es => Posit es -> Posit es
+taylor_approx_expm1 x = go 0 [x^n / fromIntegral (fac n) | n <- [1..]]
   where
-    go :: Natural -> Posit es -> Posit es
-    go !k !acc
-      | acc == (acc + term k) = acc  -- if x == x + dx then terminate and return x
-      | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit es
-    term k = (z^k) / (fromIntegral.fac $ k)
---
+    go :: Posit es -> [Posit es] -> Posit es
+    go !acc (h:t) | acc == acc + h = acc
+                  | otherwise = go (acc + h) t 
+-- need to use a Taylor Series, the `tanh` formulation doesn't work because it requires something that depends on `exp`
 
 
 -- =====================================================================
