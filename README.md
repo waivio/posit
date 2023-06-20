@@ -145,3 +145,4 @@ Number of Accurate Bits `acosh`:
 Number of Accurate Bits `atanh`:
 ![numberOfAccuarateBits atanh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20atanh%20with%20P16%20and%20Posit16.png)
 
+
