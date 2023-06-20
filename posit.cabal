@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           posit
-version:        2022.0.1.1
+version:        2022.0.1.2
 description:    The Posit Number format attempting to conform to the Posit Standard Versions 3.2 and 2022.  Where Real numbers are approximated by `Maybe Rational` and sampled in a similar way to the projective real line.
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues

@@ -1,4 +1,4 @@
-# posit 2022.0.1.1
+# posit 2022.0.1.2
 
 The [Posit Standard 2022](https://posithub.org/docs/posit_standard-2.pdf),
 and [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf), 
@@ -101,12 +101,13 @@ length integers.  The 'scientific' library provides 'read' and 'show'
 instances.
 
 
-Well, so...
-Iron sharpens Iron, or so they say.
-So, the implementations might not be perfect, but... they pretty good!
+The Elementary Functions for this posit library are implemented natively
+using the next larger posit number.  P16 and Posit16 numbers are tested
+exhaustively against Double Precision numbers as the orical.  The results
+are below:
 
 Number of Accurate Bits `exp`:
-![numberOfAccurateBits exp](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20acos%20with%20P16%20and%20Posit16.png)
+![numberOfAccurateBits exp](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20exp%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `log`:
 ![numberOfAccuarateBits log](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20log%20with%20P16%20and%20Posit16.png)
@@ -143,6 +144,5 @@ Number of Accurate Bits `acosh`:
 
 Number of Accurate Bits `atanh`:
 ![numberOfAccuarateBits atanh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20atanh%20with%20P16%20and%20Posit16.png)
-
 
 

@@ -16,6 +16,7 @@ import Graphics.Rendering.Chart.Backend.Cairo
 main :: IO ()
 main = do expPlotP16Posit16
           logPlotP16Posit16
+          sqrtPlotsP16Posit16
           sinPlotsP16Posit16
           cosPlotsP16Posit16
           asinPlotsP16Posit16
@@ -26,22 +27,7 @@ main = do expPlotP16Posit16
           asinhPlotsP16Posit16
           acoshPlotsP16Posit16
           atanhPlotsP16Posit16
-          sqrtPlotsP16Posit16
 --
-
-sinPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of sin with P16 and Posit16.png" $ do
-    let sineP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sin p) sin) | p <- enumFrom (NaR :: P16)]
-        sinePosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sin p) sin) | p <- enumFrom (NaR :: Posit16)]
-    layout_title .= "Number of Accurate Bits of P16 and Posit16 Sine"
-    plot (line "sin P16 error" [sineP16])
-    plot (line "sin Posit16 error" [sinePosit16])
-
-cosPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of cos with P16 and Posit16.png" $ do
-    let cosineP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (cos p) cos) | p <- enumFrom (NaR :: P16)]
-        cosinePosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (cos p) cos) | p <- enumFrom (NaR :: Posit16)]
-    layout_title .= "Number of Accurate Bits of P16 and Posit16 Cosine"
-    plot (line "cos P16 error" [cosineP16])
-    plot (line "cos Posit16 error" [cosinePosit16])
 
 expPlotP16Posit16 = toFile def "./test/Results/Bits Accuracy of exp with P16 and Posit16.png" $ do
     let expP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (exp p) exp) | p <- enumFrom (NaR :: P16)]
@@ -56,6 +42,27 @@ logPlotP16Posit16 = toFile def "./test/Results/Bits Accuracy of log with P16 and
     layout_title .= "Number of Accurate Bits of  P16 and Posit16 Log"
     plot (line "log P16 error" [lnP16])
     plot (line "log Posit16 error" [lnPosit16])
+
+sqrtPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of sqrt with P16 and Posit16.png" $ do
+    let sqrtP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sqrt p) sqrt) | p <- enumFrom (0 :: P16)]
+        sqrtPosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sqrt p) sqrt) | p <- enumFrom (0 :: Posit16)]
+    layout_title .= "Number of Accurate Bits of P16 and Posit16 Square Root"
+    plot (line "sqrt P16 error" [sqrtP16])
+    plot (line "sqrt Posit16 error" [sqrtPosit16])
+
+sinPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of sin with P16 and Posit16.png" $ do
+    let sineP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sin p) sin) | p <- enumFrom (NaR :: P16)]
+        sinePosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sin p) sin) | p <- enumFrom (NaR :: Posit16)]
+    layout_title .= "Number of Accurate Bits of P16 and Posit16 Sine"
+    plot (line "sin P16 error" [sineP16])
+    plot (line "sin Posit16 error" [sinePosit16])
+
+cosPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of cos with P16 and Posit16.png" $ do
+    let cosineP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (cos p) cos) | p <- enumFrom (NaR :: P16)]
+        cosinePosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (cos p) cos) | p <- enumFrom (NaR :: Posit16)]
+    layout_title .= "Number of Accurate Bits of P16 and Posit16 Cosine"
+    plot (line "cos P16 error" [cosineP16])
+    plot (line "cos Posit16 error" [cosinePosit16])
 
 asinPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of asin with P16 and Posit16.png" $ do
     let arcsineP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (asin p) sin) | p <- enumFromTo (-1 :: P16) 1]
@@ -99,10 +106,10 @@ asinhPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of asinh with P1
     plot (line "asinh P16 error" [archypsineP16])
     plot (line "asinh Posit16 error" [archypsinePosit16])
 
-acoshPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of cosh with P16 and Posit16.png" $ do
+acoshPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of acosh with P16 and Posit16.png" $ do
     let archypcosineP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (acosh p) acosh) | p <- enumFrom (NaR :: P16)]
         archypcosinePosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (acosh p) acosh) | p <- enumFrom (NaR :: Posit16)]
-    layout_title .= "Number of Accurate Bits of P16 and Posit16 Hyperbolic Cosine"
+    layout_title .= "Number of Accurate Bits of P16 and Posit16 Inv Hyperbolic Cosine"
     plot (line "acosh P16 error" [archypcosineP16])
     plot (line "acosh Posit16 error" [archypcosinePosit16])
 
@@ -112,13 +119,6 @@ atanhPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of atanh with P1
     layout_title .= "Number of Accurate Bits of P16 and Posit16 Inv Hyperbolic Tangent"
     plot (line "atanh P16 error" [archyptangentP16])
     plot (line "atanh Posit16 error" [archyptangentPosit16])
-
-sqrtPlotsP16Posit16 = toFile def "./test/Results/Bits Accuracy of sqrt with P16 and Posit16.png" $ do
-    let sqrtP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sqrt p) sqrt) | p <- enumFrom (0 :: P16)]
-        sqrtPosit16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (sqrt p) sqrt) | p <- enumFrom (0 :: Posit16)]
-    layout_title .= "Number of Accurate Bits of P16 and Posit16 Square Root"
-    plot (line "sqrt P16 error" [sqrtP16])
-    plot (line "sqrt Posit16 error" [sqrtPosit16])
 
 
 
