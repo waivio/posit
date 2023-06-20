@@ -154,32 +154,29 @@ funAtanhTaylor x
 
 
 -- Taylor series expansion and fixed point algorithm, most accurate near zero
-funSinTaylor :: Posit256 -> Posit256
-funSinTaylor NaR = NaR
-funSinTaylor z = go 0 0
+taylor_approx_sin :: forall es. PositC es => Posit es -> Posit es
+taylor_approx_sin NaR = NaR
+taylor_approx_sin z = go 0 0
   where
-    go :: Natural -> Posit256 -> Posit256
+    go :: PositC es => Natural -> Posit es -> Posit es
     go !k !acc
       | acc == (acc + term k) = acc
       | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
+    term :: PositC es => Natural -> Posit es
     term k = (-1)^k * z^(2*k+1) / (fromIntegral.fac $ 2*k+1)
 --
 
 
-
-
-
 -- Taylor series expansion and fixed point algorithm, most accurate near zero
-funCosTaylor :: Posit256 -> Posit256
-funCosTaylor NaR = NaR
-funCosTaylor z = go 0 0
+taylor_approx_cos :: forall es. PositC es => Posit es -> Posit es
+taylor_approx_cos NaR = NaR
+taylor_approx_cos z = go 0 0
   where
-    go :: Natural -> Posit256 -> Posit256
+    go :: PositC es => Natural -> Posit es -> Posit es
     go !k !acc
       | acc == (acc + term k) = acc
       | otherwise = go (k+1) (acc + term k)
-    term :: Natural -> Posit256
+    term :: PositC es => Natural -> Posit es
     term k = (-1)^k * z^(2*k) / (fromIntegral.fac $ 2*k)
 --
 
@@ -384,6 +381,32 @@ funPi6 = recip $ go 0 0 1 (1/3) ((sqrt 3 - 1) / 2)
 
 
 
+
+-- calculate exp, its most accurate near zero
+-- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
+taylor_approx_exp :: forall es. PositC es => Posit es -> Posit es
+taylor_approx_exp NaR = NaR
+taylor_approx_exp 0 = 1
+taylor_approx_exp !z = go 0 0
+  where
+    go :: PositC es => Natural -> Posit es -> Posit es
+    go !k !acc
+      | acc == (acc + term k) = acc  -- if x == x + dx then terminate and return x
+      | otherwise = go (k+1) (acc + term k)
+    term :: PositC es => Natural -> Posit es
+    term !k = (z^k) / (fromIntegral.fac $ k)
+--
+
+
+
+-- Approximation of 2^x Domain Reduction
+approx_2exp :: PositC es => (Posit es -> Posit es) -> Posit es -> Posit es
+approx_2exp _ NaR = NaR
+approx_2exp _ 0 = 1
+approx_2exp f x
+  | x < 0 = recip.approx_2exp f.negate $ x  -- always calculate the positive method
+  | otherwise = case properFraction x of
+                  (int,rem) -> fromIntegral (2^int) * f (lnOf2 * rem)
 
 
 

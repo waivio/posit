@@ -1,5 +1,11 @@
 # Changelog for Posit Numbers
 
+# posit-2022.0.1.1
+
+  * Fixed loss of precision bug in some of the Floating instances (exp,sin,cos)
+  * Added a Charting test; command to run: stack test posit:test-posit-functions
+  * Added test results to the README.md file
+
 # posit-2022.0.1.0
 
   * Added Random and Uniform Instances

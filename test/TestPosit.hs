@@ -252,7 +252,7 @@ main = do
   print $ "Are there any `recip.recip /= id` values: " ++ (show rrne8)
   print $ "Does the distributive property hold with posits all the time?: " ++ (show doesItDistribute)
   print $ "Exaustive Proof... for fused ops recovering the distributeive property... and it turns out to be true."
-  print $ "Can fused ops recover the distributive property for `fmms a b (negate a) c == fam b c a` ?: " ++ (show fusedDistribute)
+  -- print $ "Can fused ops recover the distributive property for `fmms a b (negate a) c == fam b c a` ?: " ++ (show fusedDistribute)
 
 
 
