@@ -1,4 +1,4 @@
-# posit 2022.0.1.2
+# posit 2022.0.1.3
 
 The [Posit Standard 2022](https://posithub.org/docs/posit_standard-2.pdf),
 and [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf), 
@@ -107,42 +107,42 @@ exhaustively against Double Precision numbers as the orical.  The results
 are below:
 
 Number of Accurate Bits `exp`:
-![numberOfAccurateBits exp](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20exp%20with%20P16%20and%20Posit16.png)
+![numberOfAccurateBits exp](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20exp%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `log`:
-![numberOfAccuarateBits log](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20log%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits log](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20log%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `sqrt`:
-![numberOfAccuarateBits sqrt](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20sqrt%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits sqrt](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20sqrt%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `sin`:
-![numberOfAccuarateBits sin](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20sin%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits sin](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20sin%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `cos`:
-![numberOfAccuarateBits cos](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20cos%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits cos](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20cos%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `asin`:
-![numberOfAccuarateBits asin](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20asin%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits asin](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20asin%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `acos`:
-![numberOfAccuarateBits acos](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20acos%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits acos](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20acos%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `atan`:
-![numberOfAccuarateBits atan](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20atan%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits atan](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20atan%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `sinh`:
-![numberOfAccuarateBits sinh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20sinh%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits sinh](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20sinh%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `cosh`:
-![numberOfAccuarateBits cosh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20cosh%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits cosh](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20cosh%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `asinh`:
-![numberOfAccuarateBits asinh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20asinh%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits asinh](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20asinh%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `acosh`:
-![numberOfAccuarateBits acosh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20acosh%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits acosh](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20acosh%20with%20P16%20and%20Posit16.png)
 
 Number of Accurate Bits `atanh`:
-![numberOfAccuarateBits atanh](https://github.com/waivio/posit/blob/posit-2022/test/Results/Bits%20Accuracy%20of%20atanh%20with%20P16%20and%20Posit16.png)
+![numberOfAccuarateBits atanh](https://raw.githubusercontent.com/waivio/posit/posit-2022/test/Results/Bits%20Accuracy%20of%20atanh%20with%20P16%20and%20Posit16.png)
 
 
