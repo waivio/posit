@@ -1,9 +1,21 @@
 # Changelog for Posit Numbers
 
+# posit-2022.0.1.4
+
+  * `atan 1 :: Posit256` is very slow, added a few precice constants to speed it up
+
+# posit-2022.0.1.3
+
+  * Much thanks to @svlc sugesting to link to a raw image rather than an html, and that finaly made the images display on Hackage
+
+# posit-2022.0.1.2
+
+  * Another attempt to get the images working
+
 # posit-2022.0.1.1
 
   * Fixed loss of precision bug in some of the Floating instances (exp,sin,cos)
-  * Added a Charting test; command to run: stack test posit:test-posit-functions
+  * Added a Chart test; command to run: stack test posit:test-posit-functions
   * Added test results to the README.md file
 
 # posit-2022.0.1.0

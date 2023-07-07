@@ -747,7 +747,6 @@ approx_sin 0 = 0
 approx_sin (R x) = normalizedSine (R x')
   where
     (_, x') = properFraction $ x / twoPi
-    R twoPi :: Posit es = 2 * approx_pi
 
 
 approx_cos :: forall es. PositC es => Posit es -> Posit es
@@ -756,7 +755,6 @@ approx_cos 0 = 1
 approx_cos (R x) = normalizedCosine (R x')
   where
     (_, x') = properFraction $ x / twoPi
-    R twoPi :: Posit es = 2 * approx_pi
 
 
 approx_asin :: PositC es => Posit es -> Posit es
@@ -788,7 +786,7 @@ approx_atan x
   | abs x < 1/2^122 = x  -- small angle approximaiton, found emperically
   | x < 0 = negate.approx_atan $ negate x  -- if negative turn it positive, it reduces the other domain reductions by half, found from Universal CORDIC
   | x > 1 = approx_pi/2 - approx_atan (recip x)  -- if larger than one use the complementary angle, found from Universal CORDIC
-  | x > twoMsqrt3 = approx_pi/6 + approx_atan ((approx_sqrt 3 * x - 1)/(approx_sqrt 3 + x))  -- another domain reduction, using an identity, found from https://mathonweb.com/help_ebook/html/algorithms.htm
+  | x > twoMsqrt3 = approx_pi/6 + approx_atan ((sqrt3 * x - 1)/(sqrt3 + x))  -- another domain reduction, using an identity, found from https://mathonweb.com/help_ebook/html/algorithms.htm
   | otherwise = taylor_approx_atan x
 
 
@@ -1040,9 +1038,13 @@ a001164 = [12, 288, 51840, 2488320, 209018880, 75246796800, 902961561600, 866843
 --
 
 twoMsqrt3 :: PositC es => Posit es
-twoMsqrt3 = 2 - approx_sqrt 3
+twoMsqrt3 = 0.2679491924311227064725536584941276330571947461896193719441930205480669830911999629188538132427514243243738585845932969700300549
 
+sqrt3 :: PositC es => Posit es
+sqrt3 = 1.7320508075688772935274463415058723669428052538103806280558069794519330169088000370811461867572485756756261414154067030299699450
 
+twoPi :: Rational
+twoPi = 6.2831853071795864769252867665590057683943387987502116419498891846156328125724179972560696506842341359642961730265646132941876892
 
 -- =====================================================================
 --    Helper Funcitons
