@@ -201,7 +201,7 @@ type P256 = Posit V_2022
 --
 instance PositC es => Show (Posit es) where
   show NaR = "NaR"
-  show (R r) = formatScientific Generic (Just $ decimalPrec @es) (fst.fromRationalRepetendUnlimited $ r)
+  show p@(Posit int) = formatScientific Generic (Just $ decimalPrec @es int) (fst.fromRationalRepetendUnlimited $ toRational p)
 --
 #endif
 
@@ -710,11 +710,14 @@ approx_e  = 2.718281828459045235360287471352662497757247093699959574966967627724
 
 
 approx_exp :: forall es. PositC es => Posit es -> Posit es     -- Comment by Abigale Emily:  xcddfffff
-approx_exp (R bx) = fromIntegral (uSeed @es)^^m * (taylor_approx_expm1 (R c * log_USeed) + 1)
+approx_exp NaR = NaR
+approx_exp (R x) = 2^^k * funExpTaylor (R r)
   where
-    (m,c) = properFraction $ bx / luS
-    R luS = log_USeed @es
+    k = floor (x / ln2 + 0.5)  -- should be Integer or Int
+    r = x - fromInteger k * ln2  -- should be Rational
 
+ln2 :: Rational
+ln2 = 0.6931471805599453094172321214581765680755001343602552541206800094933936219696947156058633269964186875420014810205706857336855202
 
 log_USeed :: forall es. PositC es => Posit es
 log_USeed = approx_log $ fromIntegral (uSeed @es)
@@ -870,7 +873,6 @@ normalizedCosine x
   | otherwise = tuma_approx_cos $ 2*approx_pi * x --
 
 
-
 -- Using the CORDIC domain reduction and some approximation function of log
 funLogDomainReduction :: forall es. PositC es => (Posit es -> Posit es) -> Posit es -> Posit es
 funLogDomainReduction _ NaR = NaR
@@ -881,8 +883,8 @@ funLogDomainReduction f x
     where
       (ex, sig) = (int * fromIntegral (2^(exponentSize @es)) + fromIntegral nat + 1, fromRational rat / 2) -- move significand range from 1,2 to 0.5,1
       (_,int,nat,rat) = (posit2TupPosit @es).toRational $ x -- sign should always be positive
-     
- 
+
+
 
 -- natural log with log phi acurate to 9 ULP
 funLogTaylor :: forall es. PositC es => Posit es -> Posit es
@@ -925,9 +927,25 @@ taylor_approx_expm1 :: forall es. PositC es => Posit es -> Posit es
 taylor_approx_expm1 x = go 0 [x^n / fromIntegral (fac n) | n <- [1..]]
   where
     go :: Posit es -> [Posit es] -> Posit es
+    go !acc [] = acc
     go !acc (h:t) | acc == acc + h = acc
                   | otherwise = go (acc + h) t 
 -- need to use a Taylor Series, the `tanh` formulation doesn't work because it requires something that depends on `exp`
+
+--
+-- calculate exp, its most accurate near zero
+-- sum k=0 to k=inf of the terms, iterate until a fixed point is reached
+funExpTaylor :: forall es. PositC es => Posit es -> Posit es
+funExpTaylor NaR = NaR
+funExpTaylor 0 = 1
+funExpTaylor z = go 0 0
+  where
+    go :: Natural -> Posit es -> Posit es
+    go !k !acc
+      | acc == (acc + term k) = acc  -- if x == x + dx then terminate and return x
+      | otherwise = go (k+1) (acc + term k)
+    term :: Natural -> Posit es
+    term k = (z^k) / (fromIntegral.fac $ k)
 
 
 -- =====================================================================

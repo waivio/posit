@@ -2,7 +2,7 @@
 # that coorispond to a specific GHC or Stackage version
 
 # resolver: nightly-2023-07-06  # ghc-9.6.2
-resolver: lts-21.1 # ghc-9.4.5
+resolver: lts-21.9 # ghc-9.4.6
 # resolver: lts-20.26 # ghc-9.2.8
 # resolver: lts-19.33 # ghc-9.0.2
 # resolver: lts-18.28 # ghc-8.10.7

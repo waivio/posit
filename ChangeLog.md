@@ -1,8 +1,18 @@
 # Changelog for Posit Numbers
 
+# posit-2022.1.0.0
+
+  * Optimized the `Show` instance to properly handle the tapered precision
+  * Changes to round better
+  * Improved accuracy of `exp`
+  * Added test to confirm `read.show == id` to perhaps optimise the textual representation, and verify that the implementation is sufficent
+  * Test round trip with command to run: `stack test posit:test-posit-readShowId`
+  * Added catagory to .cabal file
+
 # posit-2022.0.1.4
 
   * `atan 1 :: Posit256` is very slow, added a few precice constants to speed it up
+  * Improved accuracy of `sin` and `cos` at the extreme positive and negative values
 
 # posit-2022.0.1.3
 
