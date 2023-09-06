@@ -126,11 +126,13 @@ funArcHypTan n
       z = 1 / 2^n
 
 
-
-
-
-
-
+{-
+approx_exp :: forall es. PositC es => Posit es -> Posit es
+approx_exp (R bx) = fromIntegral (uSeed @es)^^m * (taylor_approx_expm1 (R c * log_USeed) + 1)
+  where
+    (m,c) = properFraction $ bx / luS
+    R luS = log_USeed @es
+-}
 
 
 
@@ -301,8 +303,8 @@ funPi2 = recip $ go 0 0 0 0.5 (5 / phi^3)
     go !prevA !prevS !n !a !s
       | prevA == a = a
       | prevS == s = a
-      | abs (prevA - a) <= 2*eps = a  -- P256 or Posit128, will not reach a fixed point where `prevA == a` it sort of oscelates until divergence occurs, if we test for less than 2*eps it can stop early
-      | abs (prevS - s) <= 2*eps = a
+      | abs (prevA - a) <= 3*eps = a  -- P256 or Posit128, will not reach a fixed point where `prevA == a` it sort of oscelates until divergence occurs, if we test for less than 3*eps it can stop early
+      | abs (prevS - s) <= 3*eps = a
       | otherwise =
         let x = 5 / s - 1
             y = (x - 1)^2 + 7

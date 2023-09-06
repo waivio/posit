@@ -75,13 +75,21 @@ main = do
   print $ "Machine epsilon P64 ~1.0: " ++ show (eps :: P64) -- 
   print $ "Machine epsilon P128 ~1.0: " ++ show (eps :: P128) -- 
   print $ "Machine epsilon P256 ~1.0: " ++ show (eps :: P256) -- 
-  -- | Taylor vs. Tuma
   print $ "Does (1 - 1) == 0 ?: " ++ show ((1 - 1) == (0 :: Posit256)) -- [(1 - 1) == zero | zero = 0 :: Posit es, es <- Z .. V]
-  let sqrtTaylor = (funLogDomainReduction funLogTaylor).(/2).(funExp2 funExpTaylor).(/log 2)
-  print $ "sqrt phi using a Taylor algorithm: " ++ show (sqrtTaylor phi)
-  let sqrtTuma = (funLogDomainReduction funLogTuma).(/2).(funExp2 funExpTuma).(/log 2)
-  print $ "sqrt phi using a Tuma algorithm: " ++ show (sqrtTuma phi)
-  print $ "Tuma is fasta: " ++ show (sqrtTaylor (1/1000000) - sqrtTuma (1/1000000))
+  print $ "truth    :: Posit256: " ++ show (1.2720196495140689642524224617374914917156080418400962486166403825392975755360680118303842149884602585385141476367280265057103381 :: Posit256)
+  print $ "sqrt phi :: Posit256: " ++ show (sqrt phi :: Posit256)
+  print $ "sqrt phi :: Posit128: " ++ show (sqrt phi :: Posit128)
+  print $ "sqrt phi :: Posit64: " ++ show (sqrt phi :: Posit64)
+  print $ "sqrt phi :: Posit32: " ++ show (sqrt phi :: Posit32)
+  print $ "sqrt phi :: Posit16: " ++ show (sqrt phi :: Posit16)
+  print $ "sqrt phi :: Posit8: " ++ show (sqrt phi :: Posit8)
+  print $ "truth    :: P256: " ++ show (1.2720196495140689642524224617374914917156080418400962486166403825392975755360680118303842149884602585385141476367280265057103381 :: P256)
+  print $ "sqrt phi :: P256: " ++ show (sqrt phi :: P256)
+  print $ "sqrt phi :: P128: " ++ show (sqrt phi :: P128)
+  print $ "sqrt phi :: P64: " ++ show (sqrt phi :: P64)
+  print $ "sqrt phi :: P32: " ++ show (sqrt phi :: P32)
+  print $ "sqrt phi :: P16: " ++ show (sqrt phi :: P16)
+  print $ "sqrt phi :: P8: " ++ show (sqrt phi :: P8)
   {-
   let truthPosit256 = 0.8956731517052878608869612167009786079379812529831641161347143256  :: Posit256  -- 0.89566032673209158354178209470474131001971567786620187475744721557  :: Posit256   -- 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: Posit256
   let truthP256 = 0.8956731517052878608869612167009786079379812529831641161347143256 :: P256 --  0.89566032673209158354178209470474131001971567786620187475744721557 :: P256    -- 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: P256

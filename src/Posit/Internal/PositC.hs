@@ -25,6 +25,7 @@
 {-# LANGUAGE DerivingVia #-}  -- To Derive instances for newtypes to eliminate Orphan Instances
 {-# LANGUAGE UndecidableInstances #-}  -- For deriving DoubleWord
 {-# LANGUAGE CPP #-} -- To remove Storable instances to remove noise when performing analysis of Core
+{-# LANGUAGE MultiWayIf #-}
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}  -- Turn off noise
 {-# OPTIONS_GHC -Wno-type-defaults #-}  -- Turn off noise
 
@@ -32,7 +33,6 @@
 --  |Posit Class, implementing:
 --
 --   * PositC
---   * Orphan Instances of Storable for Word128, Int128, Int256
 -- ----
 
 module Posit.Internal.PositC
@@ -61,7 +61,7 @@ import System.Random.Stateful (Uniform, uniformM)
 import Data.Int (Int8,Int16,Int32,Int64)  -- Import standard Int sizes
 import Data.DoubleWord (Word128,Int128,Int256,fromHiAndLo,hiWord,loWord,DoubleWord,BinaryWord) -- Import large Int sizes
 import Data.Word (Word64)
-import Data.Bits (Bits(..), shiftL, shift, testBit, (.&.), shiftR,FiniteBits)
+import Data.Bits (Bits(..), shiftL, shiftR, testBit, (.&.), FiniteBits)
 
 
 -- Import Naturals and Rationals
@@ -291,7 +291,7 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   formRegime :: Integer -> (IntN es, Integer)
   formRegime power
     | 0 <= power =
-      let offset = (fromIntegral (nBits @es - 1) -     power - 1)
+      let offset = (fromIntegral (nBits @es - 1) - power - 1)
       in (fromIntegral (2^(power + 1) - 1) `shiftL` fromInteger offset, offset - 1)
     | otherwise =
       let offset = (fromIntegral (nBits @es - 1) - abs power - 1)
@@ -300,16 +300,23 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   formExponent :: Natural -> Integer -> (IntN es, Integer)
   formExponent power offset =
     let offset' = offset - fromIntegral (exponentSize @es)
-    in (fromIntegral power `shift` fromInteger offset', offset')
+        result = fromIntegral power `shiftR` negate (fromInteger offset')
+    in if offset' >= 0
+       then (fromIntegral power `shiftL` fromInteger offset', offset')
+       else if testBit (fromIntegral power :: Int) (pred.fromIntegral.negate $ offset')  -- What is "Twilight Zone" Posit Number?
+            then (succ result, offset')
+            else (result, offset')  -- rounding case
   
   formFraction :: Rational -> Integer -> IntN es
   formFraction r offset =
     let numFractionBits = offset
         fractionSize = 2^numFractionBits
         normFraction = round $ (r - 1) * fractionSize  -- "posit - 1" is changing it from the significand to the fraction: [1,2) -> [0,1)
-    in if numFractionBits >= 1
-       then fromInteger normFraction
-       else 0
+    in if | numFractionBits >= 1 -> fromInteger normFraction
+          | numFractionBits == 0 -> if 2 * (r - 1) > 1 -- rounding case -- Previously was 0, this should be "banker's rounding" per Gustafson's ch3
+                                    then 1
+                                    else 0
+          | otherwise -> 0
   
   tupPosit2Posit :: (Bool,Integer,Natural,Rational) -> Maybe Rational
   tupPosit2Posit (sgn,regime,exponent,rat) = -- s = isNeg posit == True
@@ -379,9 +386,17 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
                else "0" ++ go (idx - 1)
   
   -- decimal Precision
-  decimalPrec :: Int
-  decimalPrec = fromIntegral $ 2 * (nBytes @es) + 1
-  
+  decimalPrec :: IntN es -> Int
+  -- decimalPrec _ = fromIntegral $ 2 * (nBytes @es) + 1  -- The Olden way, 1.37% fail to round trip
+  --
+  -- `1 + ` Gustafson's Decimal Accuracy (from coorispondance with Alessandro)  -- Sucessfuly round triped for both Posit32 and P32, and below
+  decimalPrec posit =
+    let regimeFormat = findRegimeFormat @es posit
+        regimeCount = countRegimeBits @es regimeFormat posit
+        fractionSize = max (fromIntegral (nBits @es) - fromIntegral (signBitSize @es) - regimeCount - fromIntegral (exponentSize @es)) 0  -- fractionSize is at least zero
+    in succ.ceiling $ (fromIntegral fractionSize + 1) * log10Of2 + halflog10Of2
+  --
+
   {-# MINIMAL exponentSize | nBytes #-}
 
 
@@ -462,6 +477,14 @@ calcRegimeInt format count | format = fromIntegral (count - 1)
 
 xnor :: Bool -> Bool -> Bool
 xnor a b = not $ (a || b) && not (b && a)
+
+
+log10Of2 :: Double
+log10Of2 = 0.3010299956639811952137388947
+
+
+halflog10Of2 :: Double
+halflog10Of2 = 0.1505149978319905976068694473
 
 
 #ifndef O_NO_STORABLE_RANDOM
