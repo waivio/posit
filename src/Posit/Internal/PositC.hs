@@ -303,7 +303,7 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
         result = fromIntegral power `shiftR` negate (fromInteger offset')
     in if offset' >= 0
        then (fromIntegral power `shiftL` fromInteger offset', offset')
-       else if testBit (fromIntegral power :: Int) (pred.fromIntegral.negate $ offset')
+       else if testBit (fromIntegral power :: Int) (pred.fromIntegral.negate $ offset')  -- What is "Twilight Zone" Posit Number?
             then (succ result, offset')
             else (result, offset')  -- rounding case
   

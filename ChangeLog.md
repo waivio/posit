@@ -5,6 +5,7 @@
   * Optimized the `Show` instance to properly handle the tapered precision
   * Changes to round better
   * Improved accuracy of `exp`
+  * Changed titles of accuracy charts to be more consistant
   * Added test to confirm `read.show == id` to perhaps optimise the textual representation, and verify that the implementation is sufficent
   * Test round trip with command to run: `stack test posit:test-posit-readShowId`
   * Added catagory to .cabal file
