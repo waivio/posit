@@ -278,7 +278,7 @@ funLnOf2 = go 1 0
 
 --
 --  Gauss–Legendre algorithm, Seems only accurate to 2-3 ULP, but really slow
-funPi1 :: forall es. (PositC es, PositC (Next es)) => Posit es
+funPi1 :: forall es. (PositF es) => Posit es
 funPi1 = go 0 3 1 (recip.sqrt $ 2) (recip 4) 1
   where
     go :: Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es -> Posit es
@@ -296,15 +296,15 @@ funPi1 = go 0 3 1 (recip.sqrt $ 2) (recip 4) 1
 --  Borwein's algorithm, with quintic convergence,
 --  gets to 7 ULP in 4 iterations, but really slow due to expensive function evaluations
 --  quite unstable and will not converge if sqrt is not accurate, which means log must be accurate
-funPi2 :: forall es. (PositC es, PositC (Next es)) => Posit es
-funPi2 = recip $ go 0 0 0 0.5 (5 / phi^3)
+funPi2 :: forall es. (PositF es) => Posit es
+funPi2 = recip $ go 0 0 0 0.5 (5 / goldenRatio^3)
   where
-    go :: Posit es -> Posit es -> Natural -> Posit es -> Posit es -> Posit es
+    go :: forall es. (PositF es) => Posit es -> Posit es -> Natural -> Posit es -> Posit es -> Posit es
     go !prevA !prevS !n !a !s
       | prevA == a = a
       | prevS == s = a
-      | abs (prevA - a) <= 3*eps = a  -- P256 or Posit128, will not reach a fixed point where `prevA == a` it sort of oscelates until divergence occurs, if we test for less than 3*eps it can stop early
-      | abs (prevS - s) <= 3*eps = a
+      | abs (prevA - a) <= 3*machEps = a  -- P256 or Posit128, will not reach a fixed point where `prevA == a` it sort of oscelates until divergence occurs, if we test for less than 3*eps it can stop early
+      | abs (prevS - s) <= 3*machEps = a
       | otherwise =
         let x = 5 / s - 1
             y = (x - 1)^2 + 7
@@ -343,10 +343,10 @@ funPi4 = (1/2^6) * go 0 0
 
 
 -- Borwin's Quadradic Alogrithm 1985
-funPi5 :: forall es. (PositC es, PositC (Next es)) => Posit es
+funPi5 :: forall es. (PositF es) => Posit es
 funPi5 = recip $ go 0 0 1 (6 - 4 * sqrt 2) (sqrt 2 - 1)
   where
-    go :: Posit es -> Posit es -> Natural -> Posit es -> Posit es -> Posit es
+    go :: forall es. (PositF es) => Posit es -> Posit es -> Natural -> Posit es -> Posit es -> Posit es
     go !prevA !prevY !n a y
       | prevA == a = a
       | prevY == y = a
@@ -362,7 +362,7 @@ funPi5 = recip $ go 0 0 1 (6 - 4 * sqrt 2) (sqrt 2 - 1)
 -- ULP: -97
 
 -- Borwin's Cubic Algirthm
-funPi6 :: forall es. (PositC es, PositC (Next es)) => Posit es
+funPi6 :: forall es. (PositF es) => Posit es
 funPi6 = recip $ go 0 0 1 (1/3) ((sqrt 3 - 1) / 2)
   where
     go :: Posit es -> Posit es -> Natural -> Posit es -> Posit es -> Posit es
@@ -435,7 +435,7 @@ funExpTuma z = go 57 1 -- was 66
 -- where the functions are equal, they are not equal.  It a class of 
 -- functions with the charicteristic of being a band pass filter in the 
 -- frequency space.
--- Shannon wavelet
+{- Shannon wavelet
 funPsiSha1 :: Posit256 -> Posit256
 funPsiSha1 NaR = NaR
 funPsiSha1 t = 2 * sinc (2 * t) - sinc t
@@ -445,7 +445,7 @@ funPsiSha1 t = 2 * sinc (2 * t) - sinc t
 funPsiSha2 :: Posit256 -> Posit256
 funPsiSha2 NaR = NaR
 funPsiSha2 t = sinc (t/2) * cos (3*pi*t/2)
---
+-}
 
 -- Shannon wavelet, same as funPsiSha1 but with a factor of pi, with the
 -- Law: funPsiSha1.(pi*) === funPsiSha3
@@ -507,7 +507,7 @@ funExp2 f x
 
 
 
-funGammaSeriesFused :: forall es. (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaSeriesFused :: forall es. (PositF es) => Posit es -> Posit es
 funGammaSeriesFused z = sqrt(2 * pi) * (z**(z - 0.5)) * exp (negate z) * (1 + series)
   where
     series :: Posit es
@@ -560,7 +560,7 @@ funLogTuma x
 --
 
 --
-funGammaRamanujan :: (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaRamanujan :: (PositF es) => Posit es -> Posit es
 funGammaRamanujan z = sqrt pi * (x / exp 1)**x * (8*x^3 + 4*x^2 + x + (1/30))**(1/6)
   where
     x = z - 1
@@ -568,24 +568,24 @@ funGammaRamanujan z = sqrt pi * (x / exp 1)**x * (8*x^3 + 4*x^2 + x + (1/30))**(
 
 
 --
-funGammaCalc :: (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaCalc :: (PositF es) => Posit es -> Posit es
 funGammaCalc z = sqrt (2*pi / z) * ((z / exp 1) * sqrt (z * sinh (recip z) + recip (810 * z^6)))**z
 
 
-funGammaNemes :: (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaNemes :: (PositF es) => Posit es -> Posit es
 funGammaNemes z = sqrt (2*pi / z) * (recip (exp 1) * (z + recip (12 * z - recip (10 * z))))**z
 
-funGammaYang :: (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaYang :: (PositF es) => Posit es -> Posit es
 funGammaYang z = sqrt (2 * pi * x) * (x / exp 1)**x * (x * sinh (recip x))**(x/2) * exp (fromRational (7 % 324) * recip (x^3 * (35 * x^2 + 33)))
   where
     x = z - 1
 
-funGammaChen :: (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaChen :: (PositF es) => Posit es -> Posit es
 funGammaChen z = sqrt (2 * pi * x) * (x / exp 1)**x * (1 + recip (12*x^3 + (24/7)*x - 0.5))**(x^2 + fromRational (53 % 210))
   where
     x = z - 1
 
-funGammaXminus1 :: (PositC es, PositC (Next es)) => Posit es -> Posit es
+funGammaXminus1 :: (PositF es) => Posit es -> Posit es
 funGammaXminus1 x = go (x - 1)
   where
     go z = sqrt (2 * pi) * exp z ** (negate z) * z ** (z + 0.5)
@@ -621,7 +621,25 @@ fac n = n * fac (n - 1)
 --
 
 
+approx_gamma :: forall es. PositF es => Posit es -> Posit es
+approx_gamma z = sqrt(2 * pi) * (z ** (z - 0.5)) * exp (negate z) * (1 + series)
+  where
+    series :: Posit es
+    series = sum $ zipWith (*) [fromRational (a % b) | (a,b) <- zip a001163 a001164] [recip $ z^n |  n <- [1..len]]  -- zipWith (\x y -> ) a001163 a001164
+    lenA = length a001163
+    lenB = length a001164
+    len = if lenA == lenB
+            then lenA
+            else error "Seiries Numerator and Denominator do not have the same length."
+--
 
+
+-- Looks like 1 ULP for 0.7813
+approx_sinc :: PositF es => Posit es -> Posit es
+approx_sinc NaR = NaR
+approx_sinc 0 = 1  -- Why the hell not!
+approx_sinc theta = sin theta / theta
+--
 
 
 

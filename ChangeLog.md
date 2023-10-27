@@ -1,5 +1,16 @@
 # Changelog for Posit Numbers
 
+# posit-2022.2.0.0
+
+  * New flag for Fused Operations applied automatically via rewrite rules `--flag posit:do-rewrite`
+  * Test for Fused Operations `stack test posit:test-posit-fusedRewrite`, with no fusing
+  * Test for Fused Operations `stack test posit:test-posit-fusedRewrite --flag posit:do-rewrite`, to execute with the rewrite rules for fusing
+  * Added new `approxEq` function to the `AltFloating` class
+  * Implemented `approxEq` by converting to the next lower `ES` and then using the normal `(==)` function, using a new `Prev es` type family
+  * Added new `Prev es` type family to the `PositF es` Constraint Synonym
+  * Changed naming in `AltFloating` to free up the name space and not use greek letters, `eps` is now `machEps`, `psi` is now `goldenRatio`
+  * Removed `gamma`, `sinc`, `expm1` from `AltFloating` making way for updates to the Posit Standard in the future for special functions
+
 # posit-2022.1.0.0
 
   * Optimized the `Show` instance to properly handle the tapered precision

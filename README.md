@@ -1,4 +1,4 @@
-# posit 2022.1.0.0
+# posit 2022.2.0.0
 
 The [Posit Standard 2022](https://posithub.org/docs/posit_standard-2.pdf),
 and [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf), 
@@ -51,15 +51,18 @@ class AltShow a where
 
 ```
 class AltFloating p where
-  eps :: p  -- Machine Epsilon near 1.0
-  phi :: p
-  gamma :: p -> p
-  sinc :: p -> p
-  expm1 :: p -> p
+  machEps :: p  -- Machine Epsilon near 1.0
+  approxEq :: p -> p -> Bool
+  goldenRatio :: p
   hypot2 :: p -> p -> p
   hypot3 :: p -> p -> p -> p
   hypot4 :: p -> p -> p -> p -> p
 ```
+
+The 'FusedOps' class has been updated with rewrite rules, enabled by the
+`--flag posit:do-rewrite` flag.  When the flag is enabled, the `ghc`
+compiler will match the pattern and then automatically rewrite with the
+fused operation.
 
 ```
 class Num a => FusedOps a where
