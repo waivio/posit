@@ -5,6 +5,8 @@
   * New flag for Fused Operations applied automatically via rewrite rules `--flag posit:do-rewrite`
   * Test for Fused Operations `stack test posit:test-posit-fusedRewrite`, with no fusing
   * Test for Fused Operations `stack test posit:test-posit-fusedRewrite --flag posit:do-rewrite`, to execute with the rewrite rules for fusing
+  * Added several `fms` or `fma` functions to `asin`, `acos`, `asinh`, `acosh`.  It appeared to only improve `asinh`, at the far negative end of the function.
+  * User defined rewrite rules seem to work before but break in `ghc-9.6.3`.  I really hope it gets fixed.  See: (How Cool is Rulz!)[https://discourse.haskell.org/t/how-cool-is-rulz/7738/9]
   * Added new `approxEq` function to the `AltFloating` class
   * Implemented `approxEq` by converting to the next lower `ES` and then using the normal `(==)` function, using a new `Prev es` type family
   * Added new `Prev es` type family to the `PositF es` Constraint Synonym

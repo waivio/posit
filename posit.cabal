@@ -18,6 +18,9 @@ tested-with:         GHC == 8.10.4,
                      GHC == 9.2.8,
                      GHC == 9.4.7,
                      GHC == 9.6.3
+  -- fails rewrite rules with ghc-9.6.3 bummer.
+
+
 synopsis:       Posit Numbers
 extra-source-files:
     README.md
@@ -59,7 +62,7 @@ library
  
   if flag(do-rewrite)
     cpp-options: -DO_REWRITE
-    ghc-options: -ddump-rule-firings
+    ghc-options: -fforce-recomp -ddump-rule-firings
 
   if flag(do-liquid)
     ghc-options: -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--fast -fplugin-opt=LiquidHaskell:--no-termination -fplugin-opt=LiquidHaskell:--max-case-expand=4 -fplugin-opt=LiquidHaskell:--short-names
@@ -108,6 +111,7 @@ test-suite test-posit-functions
   hs-source-dirs:
       test
   ghc-options: -O2  -threaded -rtsopts -with-rtsopts=-N
+  cpp-options: -DO_REWRITE
   build-depends:
     base >= 4.7 && < 5,
     posit >= 2022.0.1,

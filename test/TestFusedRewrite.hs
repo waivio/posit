@@ -38,7 +38,11 @@ main = do
   print $ "== Let's see about fused dot products =="
   print $ "posit/fdot3 (pi * exp(1)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)) :: Posit256 : " ++ show ((pi * (exp 1 :: Posit256)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)))
   print $ "posit/fdot3Def `fdot3 pi goldenRatio (sqrt goldenRatio) (exp 1) (sqrt 2) (sqrt 5)` :: Posit256 : " ++ show (fdot3 pi goldenRatio (sqrt goldenRatio) (exp 1) (sqrt 2) (sqrt 5) :: Posit256)
+  print $ "posit/fdot3 (pi * exp(1)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)) :: P256 : " ++ show ((pi * (exp 1 :: P256)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)))
+  print $ "posit/fdot3Def `fdot3 pi goldenRatio (sqrt goldenRatio) (exp 1) (sqrt 2) (sqrt 5)` :: P256 : " ++ show (fdot3 pi goldenRatio (sqrt goldenRatio) (exp 1) (sqrt 2) (sqrt 5) :: P256)
   print $ "== Let's see about fused dot products =="
   print $ "posit/fdot4 (pi * exp(1)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)) + ((recip pi) * (recip goldenRatio)) :: Posit256 : " ++ show ((pi * (exp 1 :: Posit256)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)) + ((recip pi) * (recip goldenRatio)))
   print $ "posit/fdot4Def `fdot4 pi goldenRatio (sqrt goldenRatio) (recip pi) (exp 1) (sqrt 2) (sqrt 5) (recip goldenRatio)` :: Posit256 : " ++ show (fdot4 pi goldenRatio (sqrt goldenRatio) (recip pi) (exp 1) (sqrt 2) (sqrt 5) (recip goldenRatio) :: Posit256)
+  print $ "posit/fdot4 (pi * exp(1)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)) + ((recip pi) * (recip goldenRatio)) :: P256 : " ++ show ((pi * (exp 1 :: P256)) + (goldenRatio * (sqrt 2)) + ((sqrt goldenRatio) * (sqrt 5)) + ((recip pi) * (recip goldenRatio)))
+  print $ "posit/fdot4Def `fdot4 pi goldenRatio (sqrt goldenRatio) (recip pi) (exp 1) (sqrt 2) (sqrt 5) (recip goldenRatio)` :: P256 : " ++ show (fdot4 pi goldenRatio (sqrt goldenRatio) (recip pi) (exp 1) (sqrt 2) (sqrt 5) (recip goldenRatio) :: P256)
 
