@@ -326,7 +326,10 @@ instance PositC es => Enum (Posit es) where
 -- How the Frac do I get this definition:
 instance PositC es => Fractional (Posit es) where
   fromRational = R
- 
+  
+  _ / 0 = NaR
+  a / b = viaRational2 (/) a b
+  
   recip 0 = NaR
   recip p = positRECIP p
 --

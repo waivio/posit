@@ -12,13 +12,13 @@ copyright:      2021-2023 Nathan Waivio
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-tested-with:         GHC == 8.10.4,
-                     GHC == 8.10.7,
+tested-with:         GHC == 8.10.7,
                      GHC == 9.0.2,
                      GHC == 9.2.8,
-                     GHC == 9.4.7,
+                     GHC == 9.4.8,
                      GHC == 9.6.3
-  -- fails rewrite rules with ghc-9.6.3 bummer.
+  -- fails rewrite rules with ghc-9.6.3 bummer
+  -- Things before ghc-8.10.7 fail, don't care! 
 
 
 synopsis:       Posit Numbers
