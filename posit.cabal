@@ -148,7 +148,7 @@ benchmark test-posit-fusedRewrite
   type: exitcode-stdio-1.0
   hs-source-dirs: test
   main-is: TestFusedRewrite.hs
-  ghc-options: -Wall -O2 -ddump-rule-firings
+  ghc-options: -Wall -O2
   build-depends:
     base >= 4.7 && < 5,
     posit
