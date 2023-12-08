@@ -63,62 +63,62 @@ main = do
   print $ "exp(1)**(pi*sqrt 163) :: Posit8 " ++ show (exp(1 :: Posit8) ** (pi * sqrt 163)) -- 
   print $ "exp(1)**(pi*sqrt 163) :: P8 " ++ show (exp(1 :: P8) ** (pi * sqrt 163)) -- 
 -- | 'EPS'
-  print $ "Machine epsilon Posit8 ~1.0: " ++ show (eps :: Posit8) -- succ (Posit int) = Posit (succ int)
-  print $ "Machine epsilon Posit16 ~1.0: " ++ show (eps :: Posit16) -- 
-  print $ "Machine epsilon Posit32 ~1.0: " ++ show (eps :: Posit32) -- 
-  print $ "Machine epsilon Posit64 ~1.0: " ++ show (eps :: Posit64) -- 
-  print $ "Machine epsilon Posit128 ~1.0: " ++ show (eps :: Posit128) -- 
-  print $ "Machine epsilon Posit256 ~1.0: " ++ show (eps :: Posit256) -- 
-  print $ "Machine epsilon P8 ~1.0: " ++ show (eps :: P8) -- succ (Posit int) = Posit (succ int)
-  print $ "Machine epsilon P16 ~1.0: " ++ show (eps :: P16) -- 
-  print $ "Machine epsilon P32 ~1.0: " ++ show (eps :: P32) -- 
-  print $ "Machine epsilon P64 ~1.0: " ++ show (eps :: P64) -- 
-  print $ "Machine epsilon P128 ~1.0: " ++ show (eps :: P128) -- 
-  print $ "Machine epsilon P256 ~1.0: " ++ show (eps :: P256) -- 
+  print $ "Machine epsilon Posit8 ~1.0: " ++ show (machEps :: Posit8) -- succ (Posit int) = Posit (succ int)
+  print $ "Machine epsilon Posit16 ~1.0: " ++ show (machEps :: Posit16) -- 
+  print $ "Machine epsilon Posit32 ~1.0: " ++ show (machEps :: Posit32) -- 
+  print $ "Machine epsilon Posit64 ~1.0: " ++ show (machEps :: Posit64) -- 
+  print $ "Machine epsilon Posit128 ~1.0: " ++ show (machEps :: Posit128) -- 
+  print $ "Machine epsilon Posit256 ~1.0: " ++ show (machEps :: Posit256) -- 
+  print $ "Machine epsilon P8 ~1.0: " ++ show (machEps :: P8) -- succ (Posit int) = Posit (succ int)
+  print $ "Machine epsilon P16 ~1.0: " ++ show (machEps :: P16) -- 
+  print $ "Machine epsilon P32 ~1.0: " ++ show (machEps :: P32) -- 
+  print $ "Machine epsilon P64 ~1.0: " ++ show (machEps :: P64) -- 
+  print $ "Machine epsilon P128 ~1.0: " ++ show (machEps :: P128) -- 
+  print $ "Machine epsilon P256 ~1.0: " ++ show (machEps :: P256) -- 
   print $ "Does (1 - 1) == 0 ?: " ++ show ((1 - 1) == (0 :: Posit256)) -- [(1 - 1) == zero | zero = 0 :: Posit es, es <- Z .. V]
   print $ "truth    :: Posit256: " ++ show (1.2720196495140689642524224617374914917156080418400962486166403825392975755360680118303842149884602585385141476367280265057103381 :: Posit256)
-  print $ "sqrt phi :: Posit256: " ++ show (sqrt phi :: Posit256)
-  print $ "sqrt phi :: Posit128: " ++ show (sqrt phi :: Posit128)
-  print $ "sqrt phi :: Posit64: " ++ show (sqrt phi :: Posit64)
-  print $ "sqrt phi :: Posit32: " ++ show (sqrt phi :: Posit32)
-  print $ "sqrt phi :: Posit16: " ++ show (sqrt phi :: Posit16)
-  print $ "sqrt phi :: Posit8: " ++ show (sqrt phi :: Posit8)
+  print $ "sqrt goldenRatio :: Posit256: " ++ show (sqrt goldenRatio :: Posit256)
+  print $ "sqrt goldenRatio :: Posit128: " ++ show (sqrt goldenRatio :: Posit128)
+  print $ "sqrt goldenRatio :: Posit64: " ++ show (sqrt goldenRatio :: Posit64)
+  print $ "sqrt goldenRatio :: Posit32: " ++ show (sqrt goldenRatio :: Posit32)
+  print $ "sqrt goldenRatio :: Posit16: " ++ show (sqrt goldenRatio :: Posit16)
+  print $ "sqrt goldenRatio :: Posit8: " ++ show (sqrt goldenRatio :: Posit8)
   print $ "truth    :: P256: " ++ show (1.2720196495140689642524224617374914917156080418400962486166403825392975755360680118303842149884602585385141476367280265057103381 :: P256)
-  print $ "sqrt phi :: P256: " ++ show (sqrt phi :: P256)
-  print $ "sqrt phi :: P128: " ++ show (sqrt phi :: P128)
-  print $ "sqrt phi :: P64: " ++ show (sqrt phi :: P64)
-  print $ "sqrt phi :: P32: " ++ show (sqrt phi :: P32)
-  print $ "sqrt phi :: P16: " ++ show (sqrt phi :: P16)
-  print $ "sqrt phi :: P8: " ++ show (sqrt phi :: P8)
+  print $ "sqrt goldenRatio :: P256: " ++ show (sqrt goldenRatio :: P256)
+  print $ "sqrt goldenRatio :: P128: " ++ show (sqrt goldenRatio :: P128)
+  print $ "sqrt goldenRatio :: P64: " ++ show (sqrt goldenRatio :: P64)
+  print $ "sqrt goldenRatio :: P32: " ++ show (sqrt goldenRatio :: P32)
+  print $ "sqrt goldenRatio :: P16: " ++ show (sqrt goldenRatio :: P16)
+  print $ "sqrt goldenRatio :: P8: " ++ show (sqrt goldenRatio :: P8)
   {-
   let truthPosit256 = 0.8956731517052878608869612167009786079379812529831641161347143256  :: Posit256  -- 0.89566032673209158354178209470474131001971567786620187475744721557  :: Posit256   -- 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: Posit256
   let truthP256 = 0.8956731517052878608869612167009786079379812529831641161347143256 :: P256 --  0.89566032673209158354178209470474131001971567786620187475744721557 :: P256    -- 0.8956731517052878608869612167009786079379812529831641161347143256836782657295966290940929214799036260987761959338755143914935872 :: P256
-  eval "Standard: gamma(phi) :: Posit256 " (gamma (phi)) truthPosit256
-  eval "Standard: gamma(phi) :: P256 " (gamma (phi)) truthP256
-  eval "Fused Gamma: gamma(phi) :: Posit256 " (funGammaSeriesFused (phi)) truthPosit256
-  eval "Fused Gamma: gamma(phi) :: P256 " (funGammaSeriesFused (phi)) truthP256
-  eval "Ramanujan Gamma: gamma(phi) :: Posit256 " (funGammaRamanujan (phi)) truthPosit256
-  eval "Ramanujan Gamma: gamma(phi) :: P256 " (funGammaRamanujan (phi)) truthP256
-  eval "Calc Gamma: gamma(phi) :: Posit256 " (funGammaCalc (phi)) truthPosit256
-  eval "Calc Gamma: gamma(phi) :: P256 " (funGammaCalc (phi)) truthP256
-  eval "Nemes Gamma: gamma(phi) :: Posit256 " (funGammaNemes (phi)) truthPosit256
-  eval "Nemes Gamma: gamma(phi) :: P256 " (funGammaNemes (phi)) truthP256
-  eval "Yang Gamma: gamma(phi) :: Posit256 " (funGammaYang (phi)) truthPosit256
-  eval "Yang Gamma: gamma(phi) :: P256 " (funGammaYang (phi)) truthP256
-  eval "Chen Gamma: gamma(phi) :: Posit256 " (funGammaChen (phi)) truthPosit256
-  eval "Chen Gamma: gamma(phi) :: P256 " (funGammaChen (phi)) truthP256
-  eval "Gamma (x - 1): gamma(phi) :: Posit256 " (funGammaXminus1 (phi)) truthPosit256
-  eval "Gamma (x - 1): gamma(phi) :: P256 " (funGammaXminus1 (phi)) truthP256
-  eval "Calcuation of gamma(phi) using lngamma :: Posit256" (funGammaViaLngamma (phi)) truthPosit256
-  eval "Calcuation of gamma(phi) using lngamma :: P256" (funGammaViaLngamma (phi)) truthP256
-  eval "Wolfram alpha: gamma(phi) :: Posit256 " truthPosit256 truthPosit256
-  eval "Wolfram alpha: gamma(phi) :: P256 " truthP256 truthP256
+  eval "Standard: gamma(goldenRatio) :: Posit256 " (gamma (goldenRatio)) truthPosit256
+  eval "Standard: gamma(goldenRatio) :: P256 " (gamma (goldenRatio)) truthP256
+  eval "Fused Gamma: gamma(goldenRatio) :: Posit256 " (funGammaSeriesFused (goldenRatio)) truthPosit256
+  eval "Fused Gamma: gamma(goldenRatio) :: P256 " (funGammaSeriesFused (goldenRatio)) truthP256
+  eval "Ramanujan Gamma: gamma(goldenRatio) :: Posit256 " (funGammaRamanujan (goldenRatio)) truthPosit256
+  eval "Ramanujan Gamma: gamma(goldenRatio) :: P256 " (funGammaRamanujan (goldenRatio)) truthP256
+  eval "Calc Gamma: gamma(goldenRatio) :: Posit256 " (funGammaCalc (goldenRatio)) truthPosit256
+  eval "Calc Gamma: gamma(goldenRatio) :: P256 " (funGammaCalc (goldenRatio)) truthP256
+  eval "Nemes Gamma: gamma(goldenRatio) :: Posit256 " (funGammaNemes (goldenRatio)) truthPosit256
+  eval "Nemes Gamma: gamma(goldenRatio) :: P256 " (funGammaNemes (goldenRatio)) truthP256
+  eval "Yang Gamma: gamma(goldenRatio) :: Posit256 " (funGammaYang (goldenRatio)) truthPosit256
+  eval "Yang Gamma: gamma(goldenRatio) :: P256 " (funGammaYang (goldenRatio)) truthP256
+  eval "Chen Gamma: gamma(goldenRatio) :: Posit256 " (funGammaChen (goldenRatio)) truthPosit256
+  eval "Chen Gamma: gamma(goldenRatio) :: P256 " (funGammaChen (goldenRatio)) truthP256
+  eval "Gamma (x - 1): gamma(goldenRatio) :: Posit256 " (funGammaXminus1 (goldenRatio)) truthPosit256
+  eval "Gamma (x - 1): gamma(goldenRatio) :: P256 " (funGammaXminus1 (goldenRatio)) truthP256
+  eval "Calcuation of gamma(goldenRatio) using lngamma :: Posit256" (funGammaViaLngamma (goldenRatio)) truthPosit256
+  eval "Calcuation of gamma(goldenRatio) using lngamma :: P256" (funGammaViaLngamma (goldenRatio)) truthP256
+  eval "Wolfram alpha: gamma(goldenRatio) :: Posit256 " truthPosit256 truthPosit256
+  eval "Wolfram alpha: gamma(goldenRatio) :: P256 " truthP256 truthP256
   -}
   let truth = 5.0431656433600286513118821892854247103235901754138463603020001967777869609108929428415187821843384653305404495551887666992776792 :: Posit256
-  eval "Standard: exp(phi):" (exp (phi)) truth
-  eval "Taylor: exp(phi):" (funExp2 funExpTaylor (phi / log 2)) truth
-  eval "Tuma: exp(phi):" (funExp2 funExpTuma (phi / log 2)) truth
-  eval "Wolfram Alpha: exp(phi):" truth truth
+  eval "Standard: exp(goldenRatio):" (exp (goldenRatio)) truth
+  eval "Taylor: exp(goldenRatio):" (funExp2 funExpTaylor (goldenRatio / log 2)) truth
+  eval "Tuma: exp(goldenRatio):" (funExp2 funExpTuma (goldenRatio / log 2)) truth
+  eval "Wolfram Alpha: exp(goldenRatio):" truth truth
   let truth = 2.6881171418161354484126255515800135873611118773741922415191608615280287034909564914158871097219845710811670879190576068697e43 :: Posit256
   eval "Standard: exp(100):" (exp (100)) truth
   eval "Taylor: exp(100):" (funExp2 funExpTaylor (100 / log 2)) truth
@@ -140,10 +140,10 @@ main = do
   eval "Tuma: exp(-1000):" (funExp2 funExpTuma (-1000 / log 2)) truth
   eval "Wolfram Alpha: exp(-1000):" truth truth
   let truth = 0.4812118250596034474977589134243684231351843343856605196610181688401638676082217744120094291227234749972318399582936564112725683 :: Posit256
-  eval "Standard: log(phi):" (log (phi)) truth
-  eval "Taylor: log(phi):" (funLogDomainReduction funLogTaylor (phi)) truth
-  eval "Tuma: log(phi):" (funLogDomainReduction funLogTuma (phi)) truth
-  eval "Wolfram Alpha: log(phi):" truth truth
+  eval "Standard: log(goldenRatio):" (log (goldenRatio)) truth
+  eval "Taylor: log(goldenRatio):" (funLogDomainReduction funLogTaylor (goldenRatio)) truth
+  eval "Tuma: log(goldenRatio):" (funLogDomainReduction funLogTuma (goldenRatio)) truth
+  eval "Wolfram Alpha: log(goldenRatio):" truth truth
   let truth = -4.6051701859880913680359829093687284152022029772575459520666558019351452193547049604719944101791965966839355680845724972668190 :: Posit256
   eval "Standard: log(1/100):" (log (1/100)) truth
   eval "Taylor: log(1/100):" (funLogDomainReduction funLogTaylor (1/100)) truth
@@ -155,8 +155,8 @@ main = do
   eval "Tuma: log(1/1000):" (funLogDomainReduction funLogTuma (1/1000)) truth
   eval "Wolfram Alpha: log(1/1000):" truth truth
   let truth = 4.5347571611551792889915884948567915637887680293971326427244942079650289300980475282698882636812383679690567084677326507550787791 :: Posit256
-  eval "Standard: phi**pi:" ((phi) ** pi) truth
-  eval "Wolfram Alpha: phi**pi:" truth truth
+  eval "Standard: goldenRatio**pi:" ((goldenRatio) ** pi) truth
+  eval "Wolfram Alpha: goldenRatio**pi:" truth truth
   let tPiPosit256 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit256
   let tPiP256 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: P256
   let tPiPosit128 = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446 :: Posit128

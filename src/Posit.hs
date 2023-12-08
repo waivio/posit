@@ -140,7 +140,7 @@ import Data.Bits (shiftL, (.&.), (.|.))
 -- Perhaps on the chopping block if we are moving to ElementaryFunctions
 -- Imports for implementing the Transcendental Functions
 import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
-import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
+import Data.Ratio ()  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions, no more (%) now.
 
 -- for NFData instance
 import Control.DeepSeq (NFData, rnf)
@@ -230,18 +230,42 @@ instance PositC es => Ord (Posit es) where
 -- I'm num trying to get this definition:
 instance PositC es => Num (Posit es) where
   -- Addition
-  (+) = viaRational2 (+)
+  (+) = positADD
   -- Multiplication
-  (*) = viaRational2 (*)
+  (*) = positMULT
   -- 'abs', Absolute Value, it's like a magnitude of sorts, abs of a posit is the same as abs of the integer representation
-  abs = viaIntegral abs
+  abs = positABS
   -- 'signum' it is a kind of an representation of directionality, the sign of a number for instance
-  signum = viaRational signum
+  signum = positSIGNUM
   -- 'fromInteger' rounds the integer into the closest posit number
   fromInteger int = R $ fromInteger int
   -- 'negate', Negates the sign of the directionality. negate of a posit is the same as negate of the integer representation
-  negate = viaIntegral negate
+  negate = positNEG
+  -- '(-)', minus, but explisit with an implementaiton that will fuse
+  (-) = positSUB
 --
+
+--
+-- To be able to have rewrite rules to function the instance needs to be some un-inlined function
+{-# NOINLINE [1] positADD #-}
+positADD :: forall es. PositC es => Posit es -> Posit es -> Posit es
+positADD = viaRational2 (+)
+{-# NOINLINE [1] positMULT #-}
+positMULT :: forall es. PositC es => Posit es -> Posit es -> Posit es
+positMULT = viaRational2 (*)
+{-# NOINLINE [1] positNEG #-}
+positNEG :: forall es. PositC es => Posit es -> Posit es
+positNEG = viaIntegral negate
+{-# NOINLINE [1] positABS #-}
+positABS :: forall es. PositC es => Posit es -> Posit es
+positABS = viaIntegral abs
+{-# NOINLINE [1] positSIGNUM #-}
+positSIGNUM :: forall es. PositC es => Posit es -> Posit es
+positSIGNUM = viaRational signum
+{-# NOINLINE [1] positSUB #-}
+positSUB :: forall es. PositC es => Posit es -> Posit es -> Posit es
+positSUB = \ p1 p2 -> positADD p1 (positNEG p2)
+
 
 -- deriving via Integral Class, for the Integral representation of the posit
 viaIntegral :: PositC es => (IntN es -> IntN es) -> Posit es -> Posit es
@@ -291,6 +315,8 @@ instance PositC es => Enum (Posit es) where
       mid = (e2 - e1) / 2
       predicate | e2 >= e1  = (<= e3 + mid)
                 | otherwise = (>= e3 + mid)
+  fromEnum _ = error "Please do not use 'fromEnum', it is size limited to Int, and can be machine dependant.  Please advocate for the function to be size polymorphic of a FixedWidthInteger."
+  toEnum _ = error "Please do not use 'toEnum', it is size limited to Int, and can be machine dependant.  Please advocate for the function to be size polymorphic of a FixedWidthInteger."
 --
 
 
@@ -300,10 +326,18 @@ instance PositC es => Enum (Posit es) where
 -- How the Frac do I get this definition:
 instance PositC es => Fractional (Posit es) where
   fromRational = R
- 
+  
+  _ / 0 = NaR
+  a / b = viaRational2 (/) a b
+  
   recip 0 = NaR
-  recip p = viaRational recip p
+  recip p = positRECIP p
 --
+
+{-# NOINLINE [1] positRECIP #-}
+positRECIP :: forall es. PositC es => Posit es -> Posit es
+positRECIP = viaRational recip
+
 
 -- Rational Instances; Num & Ord Instanced => Real
 --
@@ -404,6 +438,24 @@ class Num a => FusedOps a where
   fsm :: a -> a -> a -> a
  
 
+#ifdef O_REWRITE
+{-# RULES
+"posit/fdot4" forall a0 a1 a2 a3 b0 b1 b2 b3. positADD (positADD (positADD (positMULT a0 b0) (positMULT a1 b1)) (positMULT a2 b2)) (positMULT a3 b3) = fdot4 a0 a1 a2 a3 b0 b1 b2 b3 -- (a0 * b0) + (a1 * b1) + (a2 * b2) + (a3 * b3)
+"posit/fsum4" forall a b c d. positADD a (positADD b (positADD c d)) = fsum4 a b c d -- a + b + c + d
+"posit/fdot3" forall a1 a2 a3 b1 b2 b3. positADD (positADD (positMULT a1 b1) (positMULT a2 b2)) (positMULT a3 b3) = fdot3 a1 a2 a3 b1 b2 b3 -- (a1 * b1) + (a2 * b2) + (a3 * b3)
+"posit/fsum3" forall a b c. positADD a (positADD b c) = fsum3 a b c -- a + b + c
+"posit/fsmSub"  forall a b c. positSUB a (positMULT b c) = fsm a b c -- a - (b * c)
+"posit/fsm"  forall a b c. positADD a (positNEG (positMULT b c)) = fsm a b c -- a - (b * c)
+"posit/fsmSwaped"  forall a b c. positADD (positNEG (positMULT b c)) a = fsm a b c -- negate (b * c) + a
+"posit/fma"  forall a b c. positADD (positMULT a b) c = fma a b c -- (a * b) + c
+"posit/fmaSwaped"  forall a b c. positADD c (positMULT a b) = fma a b c -- c + (a * b)
+"posit/fam"  forall a b c. positMULT (positADD a b) c = fam a b c -- (a + b) * c
+"posit/famSwaped"  forall a b c. positMULT c (positADD a b) = fam a b c -- c * (a + b)
+"posit/fmmsSub"  forall a b c d. positSUB (positMULT a b) (positMULT c d) = fmms a b c d -- (a * b) - (c * d)
+"posit/fmms"  forall a b c d. positADD (positMULT a b) (positNEG (positMULT c d)) = fmms a b c d -- (a * b) - (c * d)
+"posit/fmmsSwapped"  forall a b c d. positADD (positNEG (positMULT c d)) (positMULT a b) = fmms a b c d  -- negate (c * d) + (a * b)
+   #-}
+#endif
 
 -- Rational Instance
 instance FusedOps Rational where
@@ -768,7 +820,7 @@ approx_asin x
   | x == -1 = -approx_pi/2
   | otherwise = approx_atan w
     where
-      w = x / approx_sqrt (1 - x^2)
+      w = x / approx_sqrt (fsm 1 x x)  --  (1 - x^2)
 
 
 approx_acos :: PositC es => Posit es -> Posit es
@@ -780,7 +832,7 @@ approx_acos x
   | x > 0 = approx_atan invw
   | otherwise = error "Prove it covers for Rational Numbers."
     where
-      invw = approx_sqrt (1 - x^2) / x
+      invw = approx_sqrt (fsm 1 x x) / x  --  (1 - x^2)
 
 
 approx_atan :: PositC es => Posit es -> Posit es
@@ -805,14 +857,14 @@ approx_cosh x = (approx_exp x + approx_exp (negate x))/2
 
 approx_asinh :: PositC es => Posit es -> Posit es
 approx_asinh NaR = NaR
-approx_asinh x = approx_log $ x + approx_sqrt (x^2 + 1)
+approx_asinh x = approx_log $ x + approx_sqrt (fma x x 1)  -- (x^2 + 1)
 
 
 approx_acosh :: PositC es => Posit es -> Posit es
 approx_acosh NaR = NaR
 approx_acosh x
   | x < 1 = NaR
-  | otherwise = approx_log $ x + approx_sqrt (x^2 - 1)
+  | otherwise = approx_log $ x + approx_sqrt (fma x x (-1))  -- (x^2 - 1)
 
 
 approx_atanh :: forall es. PositC es => Posit es -> Posit es
@@ -980,24 +1032,21 @@ tuma_approx_sin z = go 19 1  -- TODO can the order be selected based on the word
 -- =========================================================
 
 class AltFloating p where
-  eps :: p
-  phi :: p
-  gamma :: p -> p
-  sinc :: p -> p
-  expm1 :: p -> p
+  machEps :: p
+  approxEq :: p -> p -> Bool
+  goldenRatio :: p
   hypot2 :: p -> p -> p
   hypot3 :: p -> p -> p -> p
   hypot4 :: p -> p -> p -> p -> p
 
 --
-instance PositF es => AltFloating (Posit es) where
-  phi = 1.6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374847540880753868917521266338   -- approx_phi 1.6
-  eps = succ 1.0 - 1.0
-  gamma = approx_gamma
-  sinc = approx_sinc
-  expm1 x =
-    let b = approx_atanh $ x / 2
-    in (2 * b) / (1 - b)
+instance forall es. PositF es => AltFloating (Posit es) where
+  machEps = succ 1.0 - 1.0
+  approxEq a b =
+    let a' = convert a :: Posit (Prev es)
+        b' = convert b :: Posit (Prev es)
+    in a' == b'
+  goldenRatio = 1.6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374847540880753868917521266338   -- approx_phi 1.6
   hypot2 a b = let a' :: Posit (Next es) = convert a
                    b' :: Posit (Next es) = convert b
                in convert (approx_sqrt $ a'^2 + b'^2) :: Posit es
@@ -1013,46 +1062,14 @@ instance PositF es => AltFloating (Posit es) where
 
 
 
-
-
-
-approx_gamma :: forall es. PositC es => Posit es -> Posit es
-approx_gamma z = approx_sqrt(2 * approx_pi) * (z `approx_pow` (z - 0.5)) * approx_exp (negate z) * (1 + series)
-  where
-    series :: Posit es
-    series = sum $ zipWith (*) [fromRational (a % b) | (a,b) <- zip a001163 a001164] [recip $ z^n |  n <- [1..len]]  -- zipWith (\x y -> ) a001163 a001164
-    lenA = length a001163
-    lenB = length a001164
-    len = if lenA == lenB
-            then lenA
-            else error "Seiries Numerator and Denominator do not have the same length."
---
-
-
--- Looks like 1 ULP for 0.7813
-approx_sinc :: PositC es => Posit es -> Posit es
-approx_sinc NaR = NaR
-approx_sinc 0 = 1  -- Why the hell not!
-approx_sinc theta = approx_sin theta / theta
---
-
-
-
 -- =====================================================================
---    Useful Constants
+--    Useful Constants used internally for Elementary Functions
 -- =====================================================================
 
 --
 -- Use the constant, for performance
 lnOf2 :: PositC es => Posit es
 lnOf2 = 0.6931471805599453094172321214581765680755001343602552541206800094933936219696947156058633269964186875420014810205706857336855202
---
-
---
-a001163 :: [Integer] -- Numerator
-a001163 = [1, 1, -139, -571, 163879, 5246819, -534703531, -4483131259, 432261921612371, 6232523202521089, -25834629665134204969, -1579029138854919086429, 746590869962651602203151, 1511513601028097903631961, -8849272268392873147705987190261, -142801712490607530608130701097701]
-a001164 :: [Integer]  -- Denominator
-a001164 = [12, 288, 51840, 2488320, 209018880, 75246796800, 902961561600, 86684309913600, 514904800886784000, 86504006548979712000, 13494625021640835072000, 9716130015581401251840000, 116593560186976815022080000, 2798245444487443560529920000, 299692087104605205332754432000000, 57540880724084199423888850944000000]
 --
 
 twoMsqrt3 :: PositC es => Posit es

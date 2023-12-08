@@ -42,7 +42,8 @@ module Posit.Internal.PositC
  IntN,
  FixedWidthInteger(),
  Max,
- Next
+ Next,
+ Prev
  ) where
 
 import Prelude hiding (exponent,significand)
@@ -155,6 +156,21 @@ type family Next (es :: ES)
     Next III_2022 = IV_2022
     Next IV_2022  = V_2022
     Next V_2022   = V_2022
+
+type family Prev (es :: ES)
+  where
+    Prev Z_3_2 = Z_3_2
+    Prev I_3_2 = Z_3_2
+    Prev II_3_2 = I_3_2
+    Prev III_3_2 = II_3_2
+    Prev IV_3_2 = III_3_2
+    Prev V_3_2 = IV_3_2
+    Prev Z_2022 = Z_2022
+    Prev I_2022 = Z_2022
+    Prev II_2022 = I_2022
+    Prev III_2022 = II_2022
+    Prev IV_2022 = III_2022
+    Prev V_2022 = IV_2022
 
 -- | The 'FixedWidthInteger' is a Constraint Synonym that contains all
 -- of the constraints provided by the 'IntN' Type Family.  It is a super
@@ -442,7 +458,7 @@ instance PositC V_2022 where
   nBytes = 2^5
 
 -- | `PositF` Constraint Synonym for things that need both the word size and the next higher word size
-type PositF es = (PositC es, PositC (Next es))
+type PositF es = (PositC es, PositC (Next es), PositC (Prev es))
 
 
 -- =====================================================================
