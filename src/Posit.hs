@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------------------
 --   Posit Numbers
---   Copyright   :  (C) 2022-2023 Nathan Waivio
+--   Copyright   :  (C) 2022-2024 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
