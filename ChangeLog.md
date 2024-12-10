@@ -1,6 +1,6 @@
 # Changelog for Posit Numbers
 
-# posit-2022.0.0.1
+# posit-2022.2.0.1
 
  * Converted the function tests to run concurently for a noice speed up
 
