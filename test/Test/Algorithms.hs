@@ -40,7 +40,7 @@ import Prelude hiding (rem)
 -- import Posit.Internal.ElementaryFunctions
 -- Perhaps on the chopping block if we are moving to ElementaryFunctions
 -- Imports for implementing the Transcendental Functions
-import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
+import Numeric.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
 import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions
 
 

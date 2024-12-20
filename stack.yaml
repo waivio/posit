@@ -1,8 +1,8 @@
 # This file is attempting to maintain the working Liquid Haskell versions
 # that coorispond to a specific GHC or Stackage version
 
-resolver: nightly-2024-12-08 # ghc-9.8.4
-# resolver: nightly-2024-11-23 # ghc-9.8.3
+# resolver: nightly-2024-12-18 # ghc-9.10.1
+resolver: lts-23.1 # ghc-9.8.4
 # resolver: lts-22.42 # ghc-9.6.6
 # resolver: lts-21.25 # ghc-9.4.8
 # resolver: lts-20.26 # ghc-9.2.8

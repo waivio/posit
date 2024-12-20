@@ -67,7 +67,7 @@ import Data.Bits (Bits(..), shiftL, shiftR, testBit, (.&.), FiniteBits)
 
 -- Import Naturals and Rationals
 {-@ embed Natural * as int @-}
-import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115)
+import Numeric.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115)
 {-@ embed Ratio * as real @-}
 {-@ embed Rational * as real @-}
 import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D)
