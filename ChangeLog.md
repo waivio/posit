@@ -2,6 +2,7 @@
 
 # posit-2022.2.0.1
 
+ * Replaced GHC.Natural with Numeric.Natural
  * Converted the function tests to run concurently for a noice speed up
 
 # posit-2022.2.0.0
