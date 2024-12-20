@@ -1,5 +1,10 @@
 # Changelog for Posit Numbers
 
+# posit-2022.2.0.1
+
+ * Replaced GHC.Natural with Numeric.Natural
+ * Converted the function tests to run concurently for a noice speed up
+
 # posit-2022.2.0.0
 
   * Updated divide (/) to have one less round operation, previous default was `a * recip b`, divide two rational numbers then round `viaRational2 (/) a b`, it sort of fuses the old default, reducing error

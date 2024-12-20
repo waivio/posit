@@ -13,21 +13,63 @@ import Graphics.Rendering.Chart.Easy
 import Graphics.Rendering.Chart.Backend.Cairo
 
 
+import Control.Concurrent (forkFinally,newEmptyMVar,putMVar,tryTakeMVar,MVar)
+import Data.Maybe (catMaybes)
+
+import Data.Time.Clock (getCurrentTime)
+
 main :: IO ()
-main = do expPlotP16Posit16
-          logPlotP16Posit16
-          sqrtPlotsP16Posit16
-          sinPlotsP16Posit16
-          cosPlotsP16Posit16
-          asinPlotsP16Posit16
-          acosPlotsP16Posit16
-          atanPlotsP16Posit16
-          sinhPlotsP16Posit16
-          coshPlotsP16Posit16
-          asinhPlotsP16Posit16
-          acoshPlotsP16Posit16
-          atanhPlotsP16Posit16
+main = do
+  print "Start:"
+  print =<< getCurrentTime
+  mvar1 <- newEmptyMVar
+  mvar2 <- newEmptyMVar
+  mvar3 <- newEmptyMVar
+  mvar4 <- newEmptyMVar
+  mvar5 <- newEmptyMVar
+  mvar6 <- newEmptyMVar
+  mvar7 <- newEmptyMVar
+  mvar8 <- newEmptyMVar
+  mvar9 <- newEmptyMVar
+  mvar10 <- newEmptyMVar
+  mvar11 <- newEmptyMVar
+  mvar12 <- newEmptyMVar
+  mvar13 <- newEmptyMVar
+  forkFinally expPlotP16Posit16 (\_ -> printDone mvar1 "exp")
+  forkFinally logPlotP16Posit16 (\_ -> printDone mvar2 "log")
+  forkFinally sqrtPlotsP16Posit16 (\_ -> printDone mvar3 "sqrt")
+  forkFinally sinPlotsP16Posit16 (\_ -> printDone mvar4 "sin")
+  forkFinally cosPlotsP16Posit16 (\_ -> printDone mvar5 "cos")
+  forkFinally asinPlotsP16Posit16 (\_ -> printDone mvar6 "asin")
+  forkFinally acosPlotsP16Posit16 (\_ -> printDone mvar7 "acos")
+  forkFinally atanPlotsP16Posit16 (\_ -> printDone mvar8 "atan")
+  forkFinally sinhPlotsP16Posit16 (\_ -> printDone mvar9 "sinh")
+  forkFinally coshPlotsP16Posit16 (\_ -> printDone mvar10 "cosh")
+  forkFinally asinhPlotsP16Posit16 (\_ -> printDone mvar11 "asinh")
+  forkFinally acoshPlotsP16Posit16 (\_ -> printDone mvar12 "acosh")
+  forkFinally atanhPlotsP16Posit16 (\_ -> printDone mvar13 "atanh")
+  checkToSeeIfDone [mvar1,mvar2,mvar3,mvar4,mvar5,mvar6,mvar7,mvar8,mvar9,mvar10,mvar11,mvar12,mvar13]
 --
+
+checkToSeeIfDone :: [MVar ()] -> IO ()
+checkToSeeIfDone [] = return ()
+checkToSeeIfDone mvars = do
+  listMaybeMVars <- mapM filtDone mvars
+  checkToSeeIfDone (catMaybes listMaybeMVars)
+
+
+filtDone :: MVar () -> IO (Maybe (MVar ()))
+filtDone mvar = do
+  r <- tryTakeMVar mvar
+  case r of
+    Nothing -> return $ Just mvar
+    Just _ -> return $ Nothing
+
+printDone mvar str = do
+  t <- getCurrentTime
+  putStrLn $ "Completed " ++ str ++ " at: " ++ show t
+  putMVar mvar ()
+
 
 expPlotP16Posit16 = toFile def "./test/Results/Bits Accuracy of exp with P16 and Posit16.png" $ do
     let expP16 = filter (\(_,d) -> not $ nanOrInf d) [(read (displayIntegral p) :: Double, err p (exp p) exp) | p <- enumFrom (NaR :: P16)]

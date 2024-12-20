@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------------------
 --   Posit Numbers
---   Copyright   :  (C) 2022-2023 Nathan Waivio
+--   Copyright   :  (C) 2022-2024 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
@@ -139,7 +139,7 @@ import Data.Bits (shiftL, (.&.), (.|.))
 -- import Posit.Internal.ElementaryFunctions
 -- Perhaps on the chopping block if we are moving to ElementaryFunctions
 -- Imports for implementing the Transcendental Functions
-import GHC.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
+import Numeric.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115) for some of the Transcendental Functions
 import Data.Ratio ()  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D), used for some of the Transcendental Functions, no more (%) now.
 
 -- for NFData instance
@@ -857,14 +857,14 @@ approx_cosh x = (approx_exp x + approx_exp (negate x))/2
 
 approx_asinh :: PositC es => Posit es -> Posit es
 approx_asinh NaR = NaR
-approx_asinh x = approx_log $ x + approx_sqrt (fma x x 1)  -- (x^2 + 1)
+approx_asinh x = approx_log $ x + approx_sqrt (fma x x 1)  -- (x^2 + 1)  -- 
 
 
 approx_acosh :: PositC es => Posit es -> Posit es
 approx_acosh NaR = NaR
 approx_acosh x
   | x < 1 = NaR
-  | otherwise = approx_log $ x + approx_sqrt (fma x x (-1))  -- (x^2 - 1)
+  | otherwise = approx_log $ x + approx_sqrt (fma x x (-1))  -- (x^2 - 1)  -- 
 
 
 approx_atanh :: forall es. PositC es => Posit es -> Posit es
