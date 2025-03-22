@@ -1,5 +1,10 @@
 # Changelog for Posit Numbers
 
+# posit.2022.2.0.2
+
+ * Fixed some of the `liquidhaskell` dependencies in the stack.yaml for your pleasure.
+ * For reminders to use LiquidHaskell support: stack build --flag posit:do-liquid
+
 # posit-2022.2.0.1
 
  * Replaced GHC.Natural with Numeric.Natural

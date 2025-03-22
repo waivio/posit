@@ -1,14 +1,14 @@
 cabal-version: 1.12
 
 name:           posit
-version:        2022.2.0.1
+version:        2022.2.0.2
 category:       Numeric, Math
 description:    The Posit Number format attempting to conform to the Posit Standard Versions 3.2 and 2022.  Where Real numbers are approximated by `Maybe Rational` and sampled in a similar way to the projective real line.
 homepage:       https://github.com/waivio/posit#readme
 bug-reports:    https://github.com/waivio/posit/issues
 author:         Nathan Waivio
 maintainer:     nathan.waivio@gmail.com
-copyright:      2021-2024 Nathan Waivio
+copyright:      2021-2025 Nathan Waivio
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -17,7 +17,8 @@ tested-with:         GHC == 8.10.7,
                      GHC == 9.2.8,
                      GHC == 9.4.8,
                      GHC == 9.6.6,
-                     GHC == 9.8.4
+                     GHC == 9.8.4,
+                     GHC == 9.10.1
   -- fails rewrite rules with ghc-9.6.3 bummer
   -- Things before ghc-8.10.7 fail, don't care! 
 
@@ -43,7 +44,7 @@ flag do-liquid
   default:     False
 
 flag do-rewrite
-  description: Build with Rewrite Rules for Fused Operations.
+  description: Build with Rewrite Rules for Fused Operations. Warning! this may not be deterministic between GHC releases.
   manual:      True
   default:     False
 
@@ -66,7 +67,7 @@ library
     ghc-options: -fforce-recomp -ddump-rule-firings
 
   if flag(do-liquid)
-    -- ghc-options: -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--fast -fplugin-opt=LiquidHaskell:--no-termination -fplugin-opt=LiquidHaskell:--max-case-expand=4 -fplugin-opt=LiquidHaskell:--short-names
+    ghc-options: -fplugin=LiquidHaskell -fplugin-opt=LiquidHaskell:--fast -fplugin-opt=LiquidHaskell:--no-termination -fplugin-opt=LiquidHaskell:--max-case-expand=4 -fplugin-opt=LiquidHaskell:--short-names
  
   if flag(do-no-storable-random)
     cpp-options: -DO_NO_STORABLE_RANDOM
@@ -75,13 +76,11 @@ library
     cpp-options: -DO_LIQUID -DO_NO_STORABLE_RANDOM
  
  
-  -- Other library packages from which modules are imported.
+  -- Other library packages from which modules are imported.  liquidhaskell doesn't need it's own version of base anymore.
   build-depends:
-    deepseq >=1.1 && <2
+    deepseq >=1.1 && <2,
+    base >=4.7 && <5
  
-  if !flag(do-liquid)
-    build-depends:
-      base >=4.7 && <5
  
   if !flag(do-no-storable-random)
     build-depends:
@@ -89,8 +88,7 @@ library
  
   if flag(do-liquid)
     build-depends:
-      -- liquid-base,
-      -- liquidhaskell
+      liquidhaskell
 
 -- perhaps one day: -threaded -rtsopts -with-rtsopts=-N
 test-suite posit-test
