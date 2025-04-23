@@ -207,10 +207,10 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   encode (Just 0) = 0
   encode (Just r)
 #ifdef O_WARN_OVER_UNDER_FLOW
-    | r > maxPosRat @es = traceStack "Warning! Overflow Occured" (mostPosVal @es)
-    | r < minNegRat @es = traceStack "Warning! Overflow Occured" (mostNegVal @es)
-    | r > 0 && r < minPosRat @es = traceStack "Warning! Underflow Occured" (leastPosVal @es)
-    | r < 0 && r > maxNegRat @es = traceStack "Warning! Underflow Occured" (leastNegVal @es)
+    | r > maxPosRat @es = traceStack "Warning! Overflow Occurred" (mostPosVal @es)
+    | r < minNegRat @es = traceStack "Warning! Overflow Occurred" (mostNegVal @es)
+    | r > 0 && r < minPosRat @es = traceStack "Warning! Underflow Occurred" (leastPosVal @es)
+    | r < 0 && r > maxNegRat @es = traceStack "Warning! Underflow Occurred" (leastNegVal @es)
 #else
     | r > maxPosRat @es = mostPosVal @es
     | r < minNegRat @es = mostNegVal @es
