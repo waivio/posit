@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           posit
-version:        2022.2.0.2
+version:        2022.2.0.3
 category:       Numeric, Math
 description:    The Posit Number format attempting to conform to the Posit Standard Versions 3.2 and 2022.  Where Real numbers are approximated by `Maybe Rational` and sampled in a similar way to the projective real line.
 homepage:       https://github.com/waivio/posit#readme
@@ -48,6 +48,11 @@ flag do-rewrite
   manual:      True
   default:     False
 
+flag warn-overflow-underflow
+  description: Build with the option to emit warnings when an overflow or underflow occurs.
+  manual:      True
+  default:     False
+
 library
   exposed-modules:
       Posit
@@ -75,6 +80,8 @@ library
   if flag(do-liquid)
     cpp-options: -DO_LIQUID -DO_NO_STORABLE_RANDOM
  
+  if flag(warn-overflow-underflow)
+    cpp-options: -DO_WARN_OVER_UNDER_FLOW
  
   -- Other library packages from which modules are imported.  liquidhaskell doesn't need it's own version of base anymore.
   build-depends:

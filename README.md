@@ -1,4 +1,4 @@
-# posit 2022.2.0.1
+# posit 2022.2
 
 The [Posit Standard 2022](https://posithub.org/docs/posit_standard-2.pdf),
 and [Posit Standard 3.2](https://posithub.org/docs/posit_standard.pdf), 
