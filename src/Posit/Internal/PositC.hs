@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------------------
 --
---   Copyright   :  (C) 2022-2023 Nathan Waivio
+--   Copyright   :  (C) 2022-2025 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
@@ -72,6 +72,9 @@ import Numeric.Natural (Natural) -- Import the Natural Numbers ℕ (u+2115)
 {-@ embed Rational * as real @-}
 import Data.Ratio ((%))  -- Import the Rational Numbers ℚ (u+211A), ℚ can get arbitrarily close to Real numbers ℝ (u+211D)
 
+#ifdef O_WARN_OVER_UNDER_FLOW
+import Debug.Trace (traceStack)
+#endif
 
 -- | The Exponent Size 'ES' kind, the constructor for the Type is a Roman Numeral.
 data ES = Z_3_2
@@ -203,10 +206,17 @@ class (FixedWidthInteger (IntN es)) => PositC (es :: ES) where
   encode Nothing = unReal @es
   encode (Just 0) = 0
   encode (Just r)
+#ifdef O_WARN_OVER_UNDER_FLOW
+    | r > maxPosRat @es = traceStack "Warning! Overflow Occurred" (mostPosVal @es)
+    | r < minNegRat @es = traceStack "Warning! Overflow Occurred" (mostNegVal @es)
+    | r > 0 && r < minPosRat @es = traceStack "Warning! Underflow Occurred" (leastPosVal @es)
+    | r < 0 && r > maxNegRat @es = traceStack "Warning! Underflow Occurred" (leastNegVal @es)
+#else
     | r > maxPosRat @es = mostPosVal @es
     | r < minNegRat @es = mostNegVal @es
     | r > 0 && r < minPosRat @es = leastPosVal @es
     | r < 0 && r > maxNegRat @es = leastNegVal @es
+#endif
     | otherwise = buildIntRep @es r
   
   decode :: IntN es -> Maybe Rational  -- ^ You have an integer with a finite integer log2 word size decode it and Maybe it is Rational

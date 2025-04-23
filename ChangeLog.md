@@ -1,6 +1,12 @@
 # Changelog for Posit Numbers
 
-# posit.2022.2.0.2
+# posit-2022.2.0.3
+
+ * Added flag to warn if an overflow or underflow occurs
+ * To use the flag with GHCI for instance: stack repl --flag posit:warn-overflow-underflow
+ * If compiled with `-prof`, `-fprof-auto`, or `-fprof-auto-calls`, stack trace information will be added
+
+# posit-2022.2.0.2
 
  * Fixed some of the `liquidhaskell` dependencies in the stack.yaml for your pleasure.
  * For reminders to use LiquidHaskell support: stack build --flag posit:do-liquid

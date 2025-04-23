@@ -1,7 +1,7 @@
 # This file is attempting to maintain the working Liquid Haskell versions
 # that coorispond to a specific GHC or Stackage version
 
-resolver: nightly-2025-03-05 # ghc-9.10.1, you may need to upgrade stack to 3.1.1
+resolver: nightly-2025-04-23 # ghc-9.10.1, you may need to upgrade stack to 3.1.1
 # resolver: lts-23.11 # ghc-9.8.4
 # resolver: lts-22.43 # ghc-9.6.6
 # resolver: lts-21.25 # ghc-9.4.8

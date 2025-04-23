@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------------------
 --   Posit Numbers
---   Copyright   :  (C) 2022-2024 Nathan Waivio
+--   Copyright   :  (C) 2022-2025 Nathan Waivio
 --   License     :  BSD3
 --   Maintainer  :  Nathan Waivio <nathan.waivio@gmail.com>
 --   Stability   :  Stable
@@ -838,7 +838,7 @@ approx_acos x
 approx_atan :: PositC es => Posit es -> Posit es
 approx_atan NaR = NaR
 approx_atan x
-  | abs x < 1/2^122 = x  -- small angle approximaiton, found emperically
+  | abs x < 1/2^122 = x  -- small angle approximaiton, found empirically
   | x < 0 = negate.approx_atan $ negate x  -- if negative turn it positive, it reduces the other domain reductions by half, found from Universal CORDIC
   | x > 1 = approx_pi/2 - approx_atan (recip x)  -- if larger than one use the complementary angle, found from Universal CORDIC
   | x > twoMsqrt3 = approx_pi/6 + approx_atan ((sqrt3 * x - 1)/(sqrt3 + x))  -- another domain reduction, using an identity, found from https://mathonweb.com/help_ebook/html/algorithms.htm
